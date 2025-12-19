@@ -3,6 +3,8 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_tim.h"
+#include "stm32f10x_adc.h"
+#include "inc/hw_config.h" // Sensor_Mode_Reset 사용
 #include <stdio.h>
 
 static volatile AlarmState alarm_state = STATE_IDLE;
@@ -14,20 +16,17 @@ volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
 volatile AlarmState* p_alarm_state = &alarm_state;
 
 // --- 기상나팔 멜로디 데이터 ---
-// 음계 주파수(루프 지연 값으로 근사치 조절)
 #define NOTE_G  3000
 #define NOTE_C  2250
 #define NOTE_E  1800
 #define NOTE_G2 1500
 
-// 기상나팔 음계 구성
 uint16_t reveille_notes[] = {
     NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G,
     NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G,
     NOTE_G, NOTE_C, NOTE_G, NOTE_C, NOTE_G, NOTE_C,
     NOTE_E, NOTE_C, NOTE_G
 };
-// 각 음의 길이 (단위: 루프 횟수)
 uint32_t reveille_beats[] = {
     100, 100, 100, 100, 200,
     100, 100, 100, 100, 200,
@@ -42,8 +41,8 @@ static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
         GPIO_ResetBits(GPIOB, GPIO_Pin_0);
         for (volatile int d = 0; d < pitch; d++);
 
-        // 중간에 알람이 꺼졌는지 확인 (빠른 반응성)
-        if (*p_alarm_state != STATE_ALARM_ACTIVE) return;
+        // 알람이 꺼졌을 때만 탈출 (Wait Rain 상태에서도 소리는 계속 남)
+        if (*p_alarm_state == STATE_ALARM_STOPPED || *p_alarm_state == STATE_IDLE) return;
     }
 }
 
@@ -51,10 +50,11 @@ void Play_Reveille(void) {
     static int note_idx = 0;
     int num_notes = sizeof(reveille_notes) / sizeof(reveille_notes[0]);
 
-    if (*p_alarm_state == STATE_ALARM_ACTIVE) {
+    // Active 상태이거나 빗물을 기다리는 상태(세수하러 가는 중)이면 소리 재생
+    if (*p_alarm_state == STATE_ALARM_ACTIVE || *p_alarm_state == STATE_WAIT_FOR_RAIN) {
         Buzzer_Sound(reveille_notes[note_idx], reveille_beats[note_idx]);
-        note_idx = (note_idx + 1) % num_notes; // 무한 반복
-        for (volatile int pause = 0; pause < 50000; pause++); // 음 간격
+        note_idx = (note_idx + 1) % num_notes;
+        for (volatile int pause = 0; pause < 50000; pause++);
     } else {
         note_idx = 0;
     }
@@ -72,9 +72,12 @@ void Alarm_Init(void) {
 
 void Alarm_Start(uint16_t seconds) {
     if (seconds > 0) {
-        *p_countdown_seconds = seconds; // 분 단위 연산 제거 -> 초 단위로 직접 입력
+        *p_countdown_seconds = seconds;
         *p_alarm_state = STATE_COUNTDOWN;
         *p_elapsed_seconds = 0;
+
+        // 시작 시 센서 상태 확실히 초기화 (터치 켬, 빗물 끔)
+        Sensor_Mode_Reset();
 
         LCD_Clear(WHITE);
         LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
@@ -93,15 +96,23 @@ void Alarm_Process(void) {
                 sprintf(lcd_buffer, "Remaining: %02d sec", (int)last_sec);
                 LCD_ShowString(40, 130, (u8*)lcd_buffer, BLUE, WHITE);
             }
-            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 끔 (High Active인 경우 ResetBits로 변경 필요)
+            GPIO_SetBits(GPIOB, GPIO_Pin_0);
             break;
 
         case STATE_ALARM_ACTIVE:
-            if (*p_elapsed_seconds == 0) { // 진입 직후 한 번만
+            if (*p_elapsed_seconds == 0) {
                 LCD_Clear(RED);
                 LCD_ShowString(40, 100, (u8*)"WAKE UP!", WHITE, RED);
             }
-            Play_Reveille(); // 군대 기상나팔 연주
+            Play_Reveille();
+            break;
+
+        case STATE_WAIT_FOR_RAIN: // [NEW] 터치 감지됨, 빗물 대기 중
+            LCD_Clear(YELLOW); // 화면 색 변경
+            LCD_ShowString(40, 100, (u8*)"GO WASH FACE!", BLACK, YELLOW);
+            sprintf(lcd_buffer, "Wait Rain.. %d", (int)*p_elapsed_seconds);
+            LCD_ShowString(40, 130, (u8*)lcd_buffer, BLACK, YELLOW);
+            Play_Reveille(); // 소리는 계속 울림
             break;
 
         case STATE_ALARM_STOPPED:
@@ -125,6 +136,10 @@ void Alarm_Reset(void) {
     *p_countdown_seconds = 0;
     TIM_Cmd(TIM2, DISABLE);
     GPIO_SetBits(GPIOB, GPIO_Pin_0);
+
+    // [NEW] 센서 상태 초기화 (터치 활성화, 빗물 비활성화)
+    Sensor_Mode_Reset();
+
     LCD_Clear(WHITE);
     LCD_ShowString(40, 100, (u8*)"Alarm Idle", BLUE, WHITE);
 }
