@@ -1,7 +1,7 @@
 #include "stm32f10x.h"
 #include "lcd.h"
-#include "alarm.h"          // 여기에 p_alarm_state가 선언되어 있음
-#include "inc/hw_config.h"
+#include "alarm.h"          // 위에서 작성한 alarm.h
+#include "inc/hw_config.h"  // 위에서 작성한 hw_config.h
 #include <stdio.h>
 
 // 안전한 UART 전송

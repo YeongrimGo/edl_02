@@ -11,18 +11,22 @@ typedef enum {
     STATE_ALARM_STOPPED
 } AlarmState;
 
-// [핵심] 다른 파일(main.c, it.c)에서 변수들을 쓸 수 있게 공유(extern)
+// [핵심] main.c가 변수를 알아볼 수 있게 공유(extern)
 extern volatile AlarmState* p_alarm_state;
 extern volatile uint32_t* p_countdown_seconds;
 extern volatile uint32_t* p_elapsed_seconds;
 
-// 함수 선언
+// 함수 선언 (목차)
 void Alarm_Init(void);
 void Alarm_Start(uint16_t seconds);
 void Alarm_Process(void);
 void Alarm_Reset(void);
+
+// 값을 가져오는 함수들
 AlarmState Alarm_GetState(void);
 uint32_t Alarm_GetElapsedSeconds(void);
-void Play_Reveille(void); // alarm.c에 있는 경우 선언 추가
+
+// 멜로디 함수
+void Play_Reveille(void);
 
 #endif
