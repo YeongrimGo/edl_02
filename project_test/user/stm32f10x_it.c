@@ -4,7 +4,7 @@
 #include "stm32f10x_tim.h"
 #include "stm32f10x_adc.h"
 #include "alarm.h"
-#include "inc/hw_config.h" // Sensor_Mode 함수 사용
+#include "inc/hw_config.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -27,7 +27,6 @@ void TIM2_IRQHandler(void) {
                 *p_alarm_state = STATE_ALARM_ACTIVE;
             }
         } else if (*p_alarm_state == STATE_ALARM_ACTIVE || *p_alarm_state == STATE_WAIT_FOR_RAIN) {
-            // 알람 중이거나 빗물 대기 중일 때도 시간 카운트 (원하는 대로 조정 가능)
             (*p_elapsed_seconds)++;
         }
     }
@@ -36,7 +35,6 @@ void TIM2_IRQHandler(void) {
 void EXTI0_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line0) != RESET) {
         if (*p_alarm_state == STATE_ALARM_ACTIVE || *p_alarm_state == STATE_WAIT_FOR_RAIN) {
-            // 물리 버튼은 비상 정지용으로 모든 상태에서 정지 가능하게 함
             *p_alarm_state = STATE_ALARM_STOPPED;
             TIM_Cmd(TIM2, DISABLE);
         }
@@ -79,52 +77,24 @@ void USART2_IRQHandler(void) {
     }
 }
 
-// 터치 센서용 인터럽트 핸들러 (PC1 -> EXTI1)
+// 터치 센서 (PC1)
 void EXTI1_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
-
-        // 알람이 울리는 중(ACTIVE)일 때 터치되면
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {
-            // [LOGIC CHANGE] 알람을 끄지 않고, '빗물 대기 모드'로 전환
+            // 빗물 대기 모드로 전환
             *p_alarm_state = STATE_WAIT_FOR_RAIN;
 
-            // 터치 센서 비활성화 & 빗물 센서(ADC) 인터럽트 활성화
+            // 터치 센서 비활성화
             Sensor_Mode_WaitRain();
 
             USART2_SendString("\r\nTouch Detected! Waiting for rain...\r\n");
         }
-
         EXTI_ClearITPendingBit(EXTI_Line1);
     }
 }
 
-// ... 기존 include 및 변수 선언 유지 ...
-
-// [MODIFIED] 빗물 감지 센서용 인터럽트 (ADC Analog Watchdog)
+// [수정] 빗물 감지 인터럽트는 사용하지 않으므로 비워둠
 void ADC1_2_IRQHandler(void) {
-    // Analog Watchdog 이벤트 발생 확인 (설정된 범위 밖으로 값이 튀었을 때)
-    if (ADC_GetITStatus(ADC1, ADC_IT_AWD)) {
-
-        // [중요] 실제로 현재 ADC 값이 2000 미만인지 확실하게 체크
-        // 빗물 센서 특성상 물이 닿으면 값이 떨어짐 (High -> Low)
-        uint16_t current_adc_value = ADC_GetConversionValue(ADC1);
-
-        if (current_adc_value < 1000) {
-
-            // 빗물을 기다리는 상태였다면
-            if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
-                // 알람 완전 정지
-                *p_alarm_state = STATE_ALARM_STOPPED;
-                TIM_Cmd(TIM2, DISABLE);
-
-                // 빗물 센서 인터럽트 끄기 (재동작 방지)
-                ADC_ITConfig(ADC1, ADC_IT_AWD, DISABLE);
-
-                USART2_SendString("\r\nRain Detected (Value < 1000)! Alarm Stopped.\r\n");
-            }
-        }
-
-        // 플래그 클리어 (반드시 해줘야 무한 루프 안 빠짐)
-        ADC_ClearITPendingBit(ADC1, ADC_IT_AWD);
-    }
+    // 폴링 방식으로 변경되었으므로 핸들러 내용은 비움
+    ADC_ClearITPendingBit(ADC1, ADC_IT_AWD);
 }
