@@ -1,48 +1,50 @@
 ###############################################################################
 #
-# IAR ELF Linker V8.22.1.15669/W32 for ARM                09/Dec/2025  19:53:57
+# IAR ELF Linker V8.22.1.15669/W32 for ARM                19/Dec/2025  20:03:32
 # Copyright 2007-2018 IAR Systems AB.
 #
-#    Output file  =  C:\project_test\Debug\Exe\week3.out
-#    Map file     =  C:\project_test\Debug\List\week3.map
+#    Output file  =  C:\tue_team2\edl_02\project_test\Debug\Exe\week3.out
+#    Map file     =  C:\tue_team2\edl_02\project_test\Debug\List\week3.map
 #    Command line =  
-#        -f C:\Users\pnu2\AppData\Local\Temp\EW99EA.tmp
-#        (C:\project_test\Debug\Obj\alarm.o
-#        C:\project_test\Debug\Obj\core_cm3.o
-#        C:\project_test\Debug\Obj\hw_config.o C:\project_test\Debug\Obj\lcd.o
-#        C:\project_test\Debug\Obj\main.o C:\project_test\Debug\Obj\misc.o
-#        C:\project_test\Debug\Obj\startup_stm32f10x_cl.o
-#        C:\project_test\Debug\Obj\stm32f10x_adc.o
-#        C:\project_test\Debug\Obj\stm32f10x_bkp.o
-#        C:\project_test\Debug\Obj\stm32f10x_can.o
-#        C:\project_test\Debug\Obj\stm32f10x_cec.o
-#        C:\project_test\Debug\Obj\stm32f10x_crc.o
-#        C:\project_test\Debug\Obj\stm32f10x_dac.o
-#        C:\project_test\Debug\Obj\stm32f10x_dbgmcu.o
-#        C:\project_test\Debug\Obj\stm32f10x_dma.o
-#        C:\project_test\Debug\Obj\stm32f10x_exti.o
-#        C:\project_test\Debug\Obj\stm32f10x_flash.o
-#        C:\project_test\Debug\Obj\stm32f10x_fsmc.o
-#        C:\project_test\Debug\Obj\stm32f10x_gpio.o
-#        C:\project_test\Debug\Obj\stm32f10x_i2c.o
-#        C:\project_test\Debug\Obj\stm32f10x_it.o
-#        C:\project_test\Debug\Obj\stm32f10x_iwdg.o
-#        C:\project_test\Debug\Obj\stm32f10x_pwr.o
-#        C:\project_test\Debug\Obj\stm32f10x_rcc.o
-#        C:\project_test\Debug\Obj\stm32f10x_rtc.o
-#        C:\project_test\Debug\Obj\stm32f10x_sdio.o
-#        C:\project_test\Debug\Obj\stm32f10x_spi.o
-#        C:\project_test\Debug\Obj\stm32f10x_tim.o
-#        C:\project_test\Debug\Obj\stm32f10x_usart.o
-#        C:\project_test\Debug\Obj\stm32f10x_wwdg.o
-#        C:\project_test\Debug\Obj\system_stm32f10x.o
-#        C:\project_test\Debug\Obj\touch.o -o
-#        C:\project_test\Debug\Exe\week3.out --map
-#        C:\project_test\Debug\List\week3.map --log
+#        -f C:\Users\pnu2\AppData\Local\Temp\EWBAD8.tmp
+#        (C:\tue_team2\edl_02\project_test\Debug\Obj\alarm.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\core_cm3.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\hw_config.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\lcd.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\main.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\misc.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\startup_stm32f10x_cl.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_adc.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_bkp.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_can.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_cec.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_crc.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_dac.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_dbgmcu.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_dma.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_exti.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_flash.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_fsmc.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_gpio.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_i2c.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_it.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_iwdg.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_pwr.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_rcc.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_rtc.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_sdio.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_spi.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_tim.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_usart.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\stm32f10x_wwdg.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\system_stm32f10x.o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj\touch.o -o
+#        C:\tue_team2\edl_02\project_test\Debug\Exe\week3.out --map
+#        C:\tue_team2\edl_02\project_test\Debug\List\week3.map --log
 #        libraries,initialization,modules,redirects,sections,veneers,unused_fragments,call_graph
-#        --log_file C:\project_test\Debug\List\week3.log --config
-#        C:\project_test\myicf.icf --semihosting --entry __iar_program_start
-#        --vfe --text_out locale)
+#        --log_file C:\tue_team2\edl_02\project_test\Debug\List\week3.log
+#        --config C:\project_test\myicf.icf --semihosting --entry
+#        __iar_program_start --vfe --text_out locale)
 #
 ###############################################################################
 
@@ -83,7 +85,7 @@ initialize by copy { rw };
   .intvec            ro code  0x08000000   0x150  startup_stm32f10x_cl.o [1]
                             - 0x08000150   0x150
 
-"P1":                                     0x431c
+"P1":                                     0x43b0
   .text              ro code  0x08000150   0xa98  lcd.o [1]
   .text              ro code  0x08000be8   0x1c8  stm32f10x_gpio.o [1]
   .text              ro code  0x08000db0   0x18c  stm32f10x_rcc.o [1]
@@ -112,74 +114,37 @@ initialize by copy { rw };
   .text              ro code  0x08002cfc     0x6  abort.o [3]
   .text              ro code  0x08002d04    0x14  exit.o [6]
   .rodata            const    0x08002d18   0x474  lcd.o [1]
-  .text              ro code  0x0800318c   0x2ec  hw_config.o [1]
-  .text              ro code  0x08003478   0x1b6  stm32f10x_usart.o [1]
-  .text              ro code  0x08003630    0x80  misc.o [1]
-  .text              ro code  0x080036b0    0xc0  stm32f10x_exti.o [1]
-  .text              ro code  0x08003770    0x58  stm32f10x_dma.o [1]
-  .text              ro code  0x080037c8   0x1a0  stm32f10x_adc.o [1]
-  .text              ro code  0x08003968   0x1d8  alarm.o [1]
-  .text              ro code  0x08003b40   0x11c  stm32f10x_tim.o [1]
-  .text              ro code  0x08003c5c    0x40  sprintf.o [3]
-  .text              ro code  0x08003c9c   0x1a4  system_stm32f10x.o [1]
-  .text              ro code  0x08003e40   0x194  stm32f10x_it.o [1]
-  .text              ro code  0x08003fd4   0x174  iar_Stoulx.o [3]
-  .text              ro code  0x08004148    0x6c  main.o [1]
-  .text              ro code  0x080041b4    0x40  zero_init3.o [5]
-  .text              ro code  0x080041f4    0x2c  copy_init3.o [5]
-  .text              ro code  0x08004220    0x28  data_init.o [5]
-  Initializer bytes  const    0x08004248    0x24  <for P2-1>
-  .iar.init_table    const    0x0800426c    0x24  - Linker created -
-  .text              ro code  0x08004290    0x1e  cmain.o [5]
-  .text              ro code  0x080042ae     0x4  low_level_init.o [3]
-  .text              ro code  0x080042b2     0x4  exit.o [3]
-  .text              ro code  0x080042b8     0xa  cexit.o [5]
-  .rodata            const    0x080042c4    0x18  alarm.o [1]
-  .rodata            const    0x080042dc    0x18  alarm.o [1]
-  .rodata            const    0x080042f4    0x10  main.o [1]
-  .rodata            const    0x08004304    0x10  main.o [1]
-  .text              ro code  0x08004314    0x10  startup_stm32f10x_cl.o [1]
-  .rodata            const    0x08004324     0xc  alarm.o [1]
-  .rodata            const    0x08004330     0xc  alarm.o [1]
-  .rodata            const    0x0800433c     0xc  alarm.o [1]
-  .text              ro code  0x08004348     0xc  cstartup_M.o [5]
-  .text              ro code  0x08004354     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004358     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x0800435c     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004360     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004364     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004368     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x0800436c     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004370     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004374     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004378     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x0800437c     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004380     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004384     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004388     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x0800438c     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004390     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004394     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x08004398     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x0800439c     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043a0     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043a4     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043a8     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043ac     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043b0     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043b4     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043b8     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043bc     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043c0     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043c4     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043c8     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043cc     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043d0     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043d4     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043d8     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043dc     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043e0     0x4  startup_stm32f10x_cl.o [1]
-  .text              ro code  0x080043e4     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x0800318c   0x31c  hw_config.o [1]
+  .text              ro code  0x080034a8   0x1b6  stm32f10x_usart.o [1]
+  .text              ro code  0x08003660    0x80  misc.o [1]
+  .text              ro code  0x080036e0    0xc0  stm32f10x_exti.o [1]
+  .text              ro code  0x080037a0    0x58  stm32f10x_dma.o [1]
+  .text              ro code  0x080037f8   0x1a0  stm32f10x_adc.o [1]
+  .text              ro code  0x08003998   0x23c  alarm.o [1]
+  .text              ro code  0x08003bd4   0x11c  stm32f10x_tim.o [1]
+  .text              ro code  0x08003cf0    0x40  sprintf.o [3]
+  .text              ro code  0x08003d30   0x1a4  system_stm32f10x.o [1]
+  .text              ro code  0x08003ed4   0x194  stm32f10x_it.o [1]
+  .text              ro code  0x08004068   0x174  iar_Stoulx.o [3]
+  .text              ro code  0x080041dc    0x6c  main.o [1]
+  .text              ro code  0x08004248    0x40  zero_init3.o [5]
+  .text              ro code  0x08004288    0x2c  copy_init3.o [5]
+  .text              ro code  0x080042b4    0x28  data_init.o [5]
+  Initializer bytes  const    0x080042dc    0x24  <for P2-1>
+  .iar.init_table    const    0x08004300    0x24  - Linker created -
+  .text              ro code  0x08004324    0x1e  cmain.o [5]
+  .text              ro code  0x08004342     0x4  low_level_init.o [3]
+  .text              ro code  0x08004346     0x4  exit.o [3]
+  .text              ro code  0x0800434c     0xa  cexit.o [5]
+  .rodata            const    0x08004358    0x18  alarm.o [1]
+  .rodata            const    0x08004370    0x18  alarm.o [1]
+  .rodata            const    0x08004388    0x10  main.o [1]
+  .rodata            const    0x08004398    0x10  main.o [1]
+  .text              ro code  0x080043a8    0x10  startup_stm32f10x_cl.o [1]
+  .rodata            const    0x080043b8     0xc  alarm.o [1]
+  .rodata            const    0x080043c4     0xc  alarm.o [1]
+  .rodata            const    0x080043d0     0xc  alarm.o [1]
+  .text              ro code  0x080043dc     0xc  cstartup_M.o [5]
   .text              ro code  0x080043e8     0x4  startup_stm32f10x_cl.o [1]
   .text              ro code  0x080043ec     0x4  startup_stm32f10x_cl.o [1]
   .text              ro code  0x080043f0     0x4  startup_stm32f10x_cl.o [1]
@@ -213,9 +178,46 @@ initialize by copy { rw };
   .text              ro code  0x08004460     0x4  startup_stm32f10x_cl.o [1]
   .text              ro code  0x08004464     0x4  startup_stm32f10x_cl.o [1]
   .text              ro code  0x08004468     0x4  startup_stm32f10x_cl.o [1]
-  .rodata            const    0x0800446c     0x0  zero_init3.o [5]
-  .rodata            const    0x0800446c     0x0  copy_init3.o [5]
-                            - 0x0800446c  0x431c
+  .text              ro code  0x0800446c     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004470     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004474     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004478     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x0800447c     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004480     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004484     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004488     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x0800448c     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004490     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004494     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x08004498     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x0800449c     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044a0     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044a4     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044a8     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044ac     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044b0     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044b4     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044b8     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044bc     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044c0     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044c4     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044c8     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044cc     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044d0     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044d4     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044d8     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044dc     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044e0     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044e4     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044e8     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044ec     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044f0     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044f4     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044f8     0x4  startup_stm32f10x_cl.o [1]
+  .text              ro code  0x080044fc     0x4  startup_stm32f10x_cl.o [1]
+  .rodata            const    0x08004500     0x0  zero_init3.o [5]
+  .rodata            const    0x08004500     0x0  copy_init3.o [5]
+                            - 0x08004500  0x43b0
 
 "P2", part 1 of 3:                          0x24
   P2-1                        0x20000000    0x24  <Init block>
@@ -227,7 +229,7 @@ initialize by copy { rw };
     .data            inited   0x20000020     0x4  stm32f10x_rcc.o [1]
                             - 0x20000024    0x24
 
-"P2", part 2 of 3:                          0x54
+"P2", part 2 of 3:                          0x58
   .bss               zero     0x20000024    0x34  stm32f10x_it.o [1]
   .bss               zero     0x20000058     0x4  alarm.o [1]
   .bss               zero     0x2000005c     0x4  alarm.o [1]
@@ -239,13 +241,14 @@ initialize by copy { rw };
   .bss               zero     0x20000072     0x2  touch.o [1]
   .bss               zero     0x20000074     0x2  touch.o [1]
   .bss               zero     0x20000076     0x1  alarm.o [1]
-  .bss               zero     0x20000077     0x1  stm32f10x_it.o [1]
-                            - 0x20000078    0x54
+  .bss               zero     0x20000077     0x1  alarm.o [1]
+  .bss               zero     0x20000078     0x1  stm32f10x_it.o [1]
+                            - 0x20000079    0x55
 
 "P2", part 3 of 3:                        0x1000
-  CSTACK                      0x20000078  0x1000  <Block>
-    CSTACK           uninit   0x20000078  0x1000  <Block tail>
-                            - 0x20001078  0x1000
+  CSTACK                      0x20000080  0x1000  <Block>
+    CSTACK           uninit   0x20000080  0x1000  <Block tail>
+                            - 0x20001080  0x1000
 
 
 *******************************************************************************
@@ -255,12 +258,12 @@ initialize by copy { rw };
           Address     Size
           -------     ----
 Zero (__iar_zero_init3)
-    1 destination range, total size 0x54:
-          0x20000024  0x54
+    1 destination range, total size 0x55:
+          0x20000024  0x55
 
 Copy (__iar_copy_init3)
     1 source range, total size 0x24:
-          0x08004248  0x24
+          0x080042dc  0x24
     1 destination range, total size 0x24:
           0x20000000  0x24
 
@@ -272,9 +275,9 @@ Copy (__iar_copy_init3)
 
     Module                  ro code  ro data  rw data
     ------                  -------  -------  -------
-C:\project_test\Debug\Obj: [1]
-    alarm.o                     472      100       25
-    hw_config.o                 748
+C:\tue_team2\edl_02\project_test\Debug\Obj: [1]
+    alarm.o                     572      100       26
+    hw_config.o                 796
     lcd.o                     2 712    4 088        2
     main.o                      108       32        4
     misc.o                      128
@@ -290,7 +293,7 @@ C:\project_test\Debug\Obj: [1]
     system_stm32f10x.o          420
     touch.o                   1 860                12
     -------------------------------------------------
-    Total:                    9 754    4 240      116
+    Total:                    9 902    4 240      117
 
 command line: [2]
     -------------------------------------------------
@@ -346,7 +349,7 @@ shb_l.a: [6]
     Gaps                         16        4
     Linker created                        36    4 096
 -----------------------------------------------------
-    Grand Total:             13 236    4 280    4 216
+    Grand Total:             13 384    4 280    4 217
 
 
 *******************************************************************************
@@ -355,53 +358,56 @@ shb_l.a: [6]
 
 Entry                      Address   Size  Type      Object
 -----                      -------   ----  ----      ------
-.iar.init_table$$Base   0x0800426c          --   Gb  - Linker created -
-.iar.init_table$$Limit  0x08004290          --   Gb  - Linker created -
-?main                   0x08004291         Code  Gb  cmain.o [5]
+.iar.init_table$$Base   0x08004300          --   Gb  - Linker created -
+.iar.init_table$$Limit  0x08004324          --   Gb  - Linker created -
+?main                   0x08004325         Code  Gb  cmain.o [5]
 ADCPrescTable           0x20000020    0x4  Data  Lc  stm32f10x_rcc.o [1]
-ADC_Cmd                 0x08003813   0x1a  Code  Gb  stm32f10x_adc.o [1]
-ADC_Configure           0x080033b7   0x74  Code  Gb  hw_config.o [1]
-ADC_DMACmd              0x0800382d   0x1a  Code  Gb  stm32f10x_adc.o [1]
+ADC_Cmd                 0x08003843   0x1a  Code  Gb  stm32f10x_adc.o [1]
+ADC_Configure           0x080033e1   0x74  Code  Gb  hw_config.o [1]
+ADC_DMACmd              0x0800385d   0x1a  Code  Gb  stm32f10x_adc.o [1]
 ADC_GetCalibrationStatus
-                        0x0800386d   0x12  Code  Gb  stm32f10x_adc.o [1]
+                        0x0800389d   0x12  Code  Gb  stm32f10x_adc.o [1]
 ADC_GetResetCalibrationStatus
-                        0x08003851   0x12  Code  Gb  stm32f10x_adc.o [1]
-ADC_Init                0x080037c9   0x4a  Code  Gb  stm32f10x_adc.o [1]
+                        0x08003881   0x12  Code  Gb  stm32f10x_adc.o [1]
+ADC_Init                0x080037f9   0x4a  Code  Gb  stm32f10x_adc.o [1]
 ADC_RegularChannelConfig
-                        0x08003899   0xc6  Code  Gb  stm32f10x_adc.o [1]
-ADC_ResetCalibration    0x08003847    0xa  Code  Gb  stm32f10x_adc.o [1]
+                        0x080038c9   0xc6  Code  Gb  stm32f10x_adc.o [1]
+ADC_ResetCalibration    0x08003877    0xa  Code  Gb  stm32f10x_adc.o [1]
 ADC_SoftwareStartConvCmd
-                        0x0800387f   0x1a  Code  Gb  stm32f10x_adc.o [1]
-ADC_StartCalibration    0x08003863    0xa  Code  Gb  stm32f10x_adc.o [1]
+                        0x080038af   0x1a  Code  Gb  stm32f10x_adc.o [1]
+ADC_StartCalibration    0x08003893    0xa  Code  Gb  stm32f10x_adc.o [1]
 ADC_Value               0x20000060    0x4  Data  Gb  main.o [1]
 ADS_Read_AD             0x08000f99   0x9e  Code  Gb  touch.o [1]
 ADS_Read_XY             0x08001037   0xae  Code  Gb  touch.o [1]
 ADS_Write_Byte          0x08000f45   0x52  Code  Gb  touch.o [1]
 APBAHBPrescTable        0x20000010   0x10  Data  Lc  stm32f10x_rcc.o [1]
 Alarm_GetElapsedSeconds
-                        0x08003ad3    0x8  Code  Gb  alarm.o [1]
-Alarm_GetState          0x08003acb    0x8  Code  Gb  alarm.o [1]
-Alarm_Init              0x0800399f    0x8  Code  Gb  alarm.o [1]
-Alarm_Process           0x080039f3   0xd8  Code  Gb  alarm.o [1]
+                        0x08003b59    0x8  Code  Gb  alarm.o [1]
+Alarm_GetState          0x08003b51    0x8  Code  Gb  alarm.o [1]
+Alarm_Init              0x080039cf    0x8  Code  Gb  alarm.o [1]
+Alarm_Process           0x08003a31  0x120  Code  Gb  alarm.o [1]
+Alarm_Process::buzzer_toggle
+                        0x20000077    0x1  Data  Lc  alarm.o [1]
 Alarm_Process::last_displayed_second
                         0x2000000c    0x4  Data  Lc  alarm.o [1]
-Alarm_Reset             0x08003adb   0x40  Code  Gb  alarm.o [1]
-Alarm_Start             0x080039a7   0x4c  Code  Gb  alarm.o [1]
-BusFault_Handler        0x08003e47    0x2  Code  Gb  stm32f10x_it.o [1]
-CSTACK$$Base            0x20000078          --   Gb  - Linker created -
-CSTACK$$Limit           0x20001078          --   Gb  - Linker created -
-DMA_Cmd                 0x080037ad   0x1c  Code  Gb  stm32f10x_dma.o [1]
-DMA_Configure           0x0800336d   0x4a  Code  Gb  hw_config.o [1]
-DMA_Init                0x08003771   0x3c  Code  Gb  stm32f10x_dma.o [1]
-DebugMon_Handler        0x08003e4d    0x2  Code  Gb  stm32f10x_it.o [1]
+Alarm_Reset             0x08003b61   0x48  Code  Gb  alarm.o [1]
+Alarm_Start             0x080039d7   0x4c  Code  Gb  alarm.o [1]
+BusFault_Handler        0x08003edb    0x2  Code  Gb  stm32f10x_it.o [1]
+Buzzer_Delay            0x08003a23    0xe  Code  Gb  alarm.o [1]
+CSTACK$$Base            0x20000080          --   Gb  - Linker created -
+CSTACK$$Limit           0x20001080          --   Gb  - Linker created -
+DMA_Cmd                 0x080037dd   0x1c  Code  Gb  stm32f10x_dma.o [1]
+DMA_Configure           0x08003397   0x4a  Code  Gb  hw_config.o [1]
+DMA_Init                0x080037a1   0x3c  Code  Gb  stm32f10x_dma.o [1]
+DebugMon_Handler        0x08003ee1    0x2  Code  Gb  stm32f10x_it.o [1]
 DeviceCode              0x20000070    0x2  Data  Gb  lcd.o [1]
 Drow_Touch_Point        0x080012ef   0x68  Code  Gb  touch.o [1]
-EXTI0_IRQHandler        0x08003ebd   0x30  Code  Gb  stm32f10x_it.o [1]
-EXTI_ClearITPendingBit  0x08003755    0x6  Code  Gb  stm32f10x_exti.o [1]
-EXTI_GetITStatus        0x08003735   0x20  Code  Gb  stm32f10x_exti.o [1]
-EXTI_Init               0x080036b1   0x84  Code  Gb  stm32f10x_exti.o [1]
+EXTI0_IRQHandler        0x08003f51   0x30  Code  Gb  stm32f10x_it.o [1]
+EXTI_ClearITPendingBit  0x08003785    0x6  Code  Gb  stm32f10x_exti.o [1]
+EXTI_GetITStatus        0x08003765   0x20  Code  Gb  stm32f10x_exti.o [1]
+EXTI_Init               0x080036e1   0x84  Code  Gb  stm32f10x_exti.o [1]
 GBHZ_16                 0x080021ac  0x594  Data  Gb  lcd.o [1]
-GPIO_Configure          0x080031ab   0x94  Code  Gb  hw_config.o [1]
+GPIO_Configure          0x080031ab   0xbe  Code  Gb  hw_config.o [1]
 GPIO_EXTILineConfig     0x08000d4f   0x56  Code  Gb  stm32f10x_gpio.o [1]
 GPIO_Init               0x08000be9   0xc4  Code  Gb  stm32f10x_gpio.o [1]
 GPIO_PinRemapConfig     0x08000cc5   0x8a  Code  Gb  stm32f10x_gpio.o [1]
@@ -409,7 +415,7 @@ GPIO_ReadInputData      0x08000cad    0x6  Code  Gb  stm32f10x_gpio.o [1]
 GPIO_ResetBits          0x08000cb9    0x6  Code  Gb  stm32f10x_gpio.o [1]
 GPIO_SetBits            0x08000cb3    0x6  Code  Gb  stm32f10x_gpio.o [1]
 GPIO_Write              0x08000cbf    0x6  Code  Gb  stm32f10x_gpio.o [1]
-HardFault_Handler       0x08003e43    0x2  Code  Gb  stm32f10x_it.o [1]
+HardFault_Handler       0x08003ed7    0x2  Code  Gb  stm32f10x_it.o [1]
 LCD_Clear               0x080006b9   0x28  Code  Gb  lcd.o [1]
 LCD_Configuration       0x080002bd   0x9c  Code  Lc  lcd.o [1]
 LCD_Delay               0x08000359   0x26  Code  Lc  lcd.o [1]
@@ -429,13 +435,13 @@ LCD_WriteRAM            0x080002b3    0xa  Code  Lc  lcd.o [1]
 LCD_WriteRAM_Prepare    0x080002a9    0xa  Code  Lc  lcd.o [1]
 LCD_WriteReg            0x08000295   0x14  Code  Lc  lcd.o [1]
 LoadInt                 0x08002963   0x56  Code  Lc  xprintfsmall_nomb.o [3]
-MemManage_Handler       0x08003e45    0x2  Code  Gb  stm32f10x_it.o [1]
-NMI_Handler             0x08003e41    0x2  Code  Gb  stm32f10x_it.o [1]
-NVIC_Configure          0x080032cb   0xa2  Code  Gb  hw_config.o [1]
-NVIC_Init               0x0800363b   0x60  Code  Gb  misc.o [1]
+MemManage_Handler       0x08003ed9    0x2  Code  Gb  stm32f10x_it.o [1]
+NMI_Handler             0x08003ed5    0x2  Code  Gb  stm32f10x_it.o [1]
+NVIC_Configure          0x080032f5   0xa2  Code  Gb  hw_config.o [1]
+NVIC_Init               0x0800366b   0x60  Code  Gb  misc.o [1]
 NVIC_PriorityGroupConfig
-                        0x08003631    0xa  Code  Gb  misc.o [1]
-PendSV_Handler          0x08003e4f    0x2  Code  Gb  stm32f10x_it.o [1]
+                        0x08003661    0xa  Code  Gb  misc.o [1]
+PendSV_Handler          0x08003ee3    0x2  Code  Gb  stm32f10x_it.o [1]
 RCC_AHBPeriphClockCmd   0x08000eb5   0x20  Code  Gb  stm32f10x_rcc.o [1]
 RCC_APB1PeriphClockCmd  0x08000ef5   0x20  Code  Gb  stm32f10x_rcc.o [1]
 RCC_APB2PeriphClockCmd  0x08000ed5   0x20  Code  Gb  stm32f10x_rcc.o [1]
@@ -444,40 +450,40 @@ RCC_GetClocksFreq       0x08000db1  0x104  Code  Gb  stm32f10x_rcc.o [1]
 Read_ADSX               0x080010e5   0x1c  Code  Gb  touch.o [1]
 Read_ADSY               0x08001101   0x1c  Code  Gb  touch.o [1]
 Refreshes_Screen        0x08001357    0xc  Code  Gb  touch.o [1]
-Region$$Table$$Base     0x0800426c          --   Gb  - Linker created -
-Region$$Table$$Limit    0x08004290          --   Gb  - Linker created -
-SVC_Handler             0x08003e4b    0x2  Code  Gb  stm32f10x_it.o [1]
-SetSysClock             0x08003d03    0x8  Code  Lc  system_stm32f10x.o [1]
-SetSysClockTo72         0x08003d0b  0x110  Code  Lc  system_stm32f10x.o [1]
-SysTick_Handler         0x08003e51    0x2  Code  Gb  stm32f10x_it.o [1]
-SystemInit              0x08003c9d   0x66  Code  Gb  system_stm32f10x.o [1]
-TIM2_IRQHandler         0x08003e53   0x6a  Code  Gb  stm32f10x_it.o [1]
-TIM_ClearITPendingBit   0x08003c2b    0x8  Code  Gb  stm32f10x_tim.o [1]
-TIM_Cmd                 0x08003bd3   0x1c  Code  Gb  stm32f10x_tim.o [1]
-TIM_Configure_Alarm     0x08003969   0x36  Code  Lc  alarm.o [1]
-TIM_GetITStatus         0x08003c07   0x24  Code  Gb  stm32f10x_tim.o [1]
-TIM_ITConfig            0x08003bef   0x18  Code  Gb  stm32f10x_tim.o [1]
-TIM_TimeBaseInit        0x08003b41   0x92  Code  Gb  stm32f10x_tim.o [1]
+Region$$Table$$Base     0x08004300          --   Gb  - Linker created -
+Region$$Table$$Limit    0x08004324          --   Gb  - Linker created -
+SVC_Handler             0x08003edf    0x2  Code  Gb  stm32f10x_it.o [1]
+SetSysClock             0x08003d97    0x8  Code  Lc  system_stm32f10x.o [1]
+SetSysClockTo72         0x08003d9f  0x110  Code  Lc  system_stm32f10x.o [1]
+SysTick_Handler         0x08003ee5    0x2  Code  Gb  stm32f10x_it.o [1]
+SystemInit              0x08003d31   0x66  Code  Gb  system_stm32f10x.o [1]
+TIM2_IRQHandler         0x08003ee7   0x6a  Code  Gb  stm32f10x_it.o [1]
+TIM_ClearITPendingBit   0x08003cbf    0x8  Code  Gb  stm32f10x_tim.o [1]
+TIM_Cmd                 0x08003c67   0x1c  Code  Gb  stm32f10x_tim.o [1]
+TIM_Configure_Alarm     0x08003999   0x36  Code  Lc  alarm.o [1]
+TIM_GetITStatus         0x08003c9b   0x24  Code  Gb  stm32f10x_tim.o [1]
+TIM_ITConfig            0x08003c83   0x18  Code  Gb  stm32f10x_tim.o [1]
+TIM_TimeBaseInit        0x08003bd5   0x92  Code  Gb  stm32f10x_tim.o [1]
 Touch_Adjust            0x08001363  0x2ee  Code  Gb  touch.o [1]
 Touch_Configuration     0x0800129d   0x52  Code  Gb  touch.o [1]
 Touch_GetXY             0x0800125d   0x40  Code  Gb  touch.o [1]
 Touch_GexX              0x0800111d   0xa0  Code  Gb  touch.o [1]
 Touch_GexY              0x080011bd   0xa0  Code  Gb  touch.o [1]
-USART1_IRQHandler       0x08003eed   0x38  Code  Gb  stm32f10x_it.o [1]
-USART1_Init             0x0800323f   0x46  Code  Gb  hw_config.o [1]
-USART2_IRQHandler       0x08003f25   0x94  Code  Gb  stm32f10x_it.o [1]
-USART2_Init             0x08003285   0x46  Code  Gb  hw_config.o [1]
-USART2_SendString       0x0800342b   0x26  Code  Gb  hw_config.o [1]
+USART1_IRQHandler       0x08003f81   0x38  Code  Gb  stm32f10x_it.o [1]
+USART1_Init             0x08003269   0x46  Code  Gb  hw_config.o [1]
+USART2_IRQHandler       0x08003fb9   0x94  Code  Gb  stm32f10x_it.o [1]
+USART2_Init             0x080032af   0x46  Code  Gb  hw_config.o [1]
+USART2_SendString       0x08003455   0x26  Code  Gb  hw_config.o [1]
 USART_ClearITPendingBit
-                        0x08003619   0x16  Code  Gb  stm32f10x_usart.o [1]
-USART_Cmd               0x08003535   0x1c  Code  Gb  stm32f10x_usart.o [1]
-USART_GetFlagStatus     0x080035ab   0x12  Code  Gb  stm32f10x_usart.o [1]
-USART_GetITStatus       0x080035bd   0x5c  Code  Gb  stm32f10x_usart.o [1]
-USART_ITConfig          0x08003551   0x4a  Code  Gb  stm32f10x_usart.o [1]
-USART_Init              0x08003479   0xb6  Code  Gb  stm32f10x_usart.o [1]
-USART_ReceiveData       0x080035a3    0x8  Code  Gb  stm32f10x_usart.o [1]
-USART_SendData          0x0800359b    0x8  Code  Gb  stm32f10x_usart.o [1]
-UsageFault_Handler      0x08003e49    0x2  Code  Gb  stm32f10x_it.o [1]
+                        0x08003649   0x16  Code  Gb  stm32f10x_usart.o [1]
+USART_Cmd               0x08003565   0x1c  Code  Gb  stm32f10x_usart.o [1]
+USART_GetFlagStatus     0x080035db   0x12  Code  Gb  stm32f10x_usart.o [1]
+USART_GetITStatus       0x080035ed   0x5c  Code  Gb  stm32f10x_usart.o [1]
+USART_ITConfig          0x08003581   0x4a  Code  Gb  stm32f10x_usart.o [1]
+USART_Init              0x080034a9   0xb6  Code  Gb  stm32f10x_usart.o [1]
+USART_ReceiveData       0x080035d3    0x8  Code  Gb  stm32f10x_usart.o [1]
+USART_SendData          0x080035cb    0x8  Code  Gb  stm32f10x_usart.o [1]
+UsageFault_Handler      0x08003edd    0x2  Code  Gb  stm32f10x_it.o [1]
 WriteOneHz              0x08000a85   0xe2  Code  Lc  lcd.o [1]
 _LitobSmallNoMb         0x08002af5   0xce  Code  Lc  xprintfsmall_nomb.o [3]
 _PrintfSmallNoMb        0x08002741  0x216  Code  Gb  xprintfsmall_nomb.o [3]
@@ -494,48 +500,48 @@ __aeabi_fsub            0x08001a39         Code  Gb  FltSub.o [4]
 __aeabi_i2f             0x0800193d         Code  Gb  S32ToFlt.o [4]
 __aeabi_ui2d            0x08001689         Code  Gb  U32ToDbl.o [4]
 __aeabi_ui2f            0x080017dd         Code  Gb  U32ToFlt.o [4]
-__cmain                 0x08004291         Code  Gb  cmain.o [5]
+__cmain                 0x08004325         Code  Gb  cmain.o [5]
 __exit                  0x08002d05   0x14  Code  Gb  exit.o [6]
 __iar_Fail_s            0x08002c2d   0x1c  Code  Gb  xfail_s.o [3]
 __iar_Memchr            0x08002ca5         Code  Gb  memchr.o [5]
-__iar_Stoulx            0x08003fd5  0x114  Code  Gb  iar_Stoulx.o [3]
+__iar_Stoulx            0x08004069  0x114  Code  Gb  iar_Stoulx.o [3]
 __iar_Strchr            0x08002c15         Code  Gb  strchr.o [5]
-__iar_copy_init3        0x080041f5   0x2c  Code  Gb  copy_init3.o [5]
-__iar_data_init3        0x08004221   0x28  Code  Gb  data_init.o [5]
+__iar_copy_init3        0x08004289   0x2c  Code  Gb  copy_init3.o [5]
+__iar_data_init3        0x080042b5   0x28  Code  Gb  data_init.o [5]
 __iar_fadd              0x08001a45         Code  Gb  FltSub.o [4]
 __iar_fsub              0x08001ae5         Code  Gb  FltAdd.o [4]
 __iar_fsubStart         0x08001af5         Code  Gb  FltAdd.o [4]
-__iar_program_start     0x08004349         Code  Gb  cstartup_M.o [5]
+__iar_program_start     0x080043dd         Code  Gb  cstartup_M.o [5]
 __iar_sqrt64            0x080016ad         Code  Gb  sqrt.o [4]
 __iar_systems$$module {Abs}
                         0x00000001         Data  Gb  command line/config [2]
-__iar_zero_init3        0x080041b5   0x40  Code  Gb  zero_init3.o [5]
-__low_level_init        0x080042af    0x4  Code  Gb  low_level_init.o [3]
+__iar_zero_init3        0x08004249   0x40  Code  Gb  zero_init3.o [5]
+__low_level_init        0x08004343    0x4  Code  Gb  low_level_init.o [3]
 __vector_table          0x08000000         Data  Gb  startup_stm32f10x_cl.o [1]
-_call_main              0x0800429d         Code  Gb  cmain.o [5]
-_exit                   0x080042b9         Code  Gb  cexit.o [5]
-_main                   0x080042ab         Code  Gb  cmain.o [5]
+_call_main              0x08004331         Code  Gb  cmain.o [5]
+_exit                   0x0800434d         Code  Gb  cexit.o [5]
+_main                   0x0800433f         Code  Gb  cmain.o [5]
 abort                   0x08002cfd    0x6  Code  Gb  abort.o [3]
 abs                     0x08000f3d    0x8  Code  Gb  abs.o [3]
 alarm_state             0x20000076    0x1  Data  Lc  alarm.o [1]
 asc2_1206               0x08002d18  0x474  Data  Gb  lcd.o [1]
 asc2_1608               0x08001bbc  0x5f0  Data  Gb  lcd.o [1]
-atoi                    0x080040ef    0x2  Code  Gb  iar_Stoulx.o [3]
+atoi                    0x08004183    0x2  Code  Gb  iar_Stoulx.o [3]
 countdown_seconds       0x20000058    0x4  Data  Lc  alarm.o [1]
-digits                  0x080040f8   0x28  Data  Lc  iar_Stoulx.o [3]
+digits                  0x0800418c   0x28  Data  Lc  iar_Stoulx.o [3]
 elapsed_seconds         0x2000005c    0x4  Data  Lc  alarm.o [1]
-exit                    0x080042b3    0x4  Code  Gb  exit.o [3]
+exit                    0x08004347    0x4  Code  Gb  exit.o [3]
 findHzIndex             0x08000a3d   0x48  Code  Lc  lcd.o [1]
-main                    0x08004149   0x6c  Code  Gb  main.o [1]
+main                    0x080041dd   0x6c  Code  Gb  main.o [1]
 memchr                  0x08002ca5         Code  Gb  memchr.o [5]
-ndigs                   0x08004120   0x28  Data  Lc  iar_Stoulx.o [3]
+ndigs                   0x080041b4   0x28  Data  Lc  iar_Stoulx.o [3]
 p_alarm_state           0x20000008    0x4  Data  Gb  alarm.o [1]
 p_countdown_seconds     0x20000000    0x4  Data  Gb  alarm.o [1]
 p_elapsed_seconds       0x20000004    0x4  Data  Gb  alarm.o [1]
 rx_buffer               0x20000024   0x34  Data  Gb  stm32f10x_it.o [1]
-rx_index                0x20000077    0x1  Data  Gb  stm32f10x_it.o [1]
+rx_index                0x20000078    0x1  Data  Gb  stm32f10x_it.o [1]
 sec_hand                0x2000006c    0x4  Data  Lc  xfail_s.o [3]
-sprintf                 0x08003c5d   0x40  Code  Gb  sprintf.o [3]
+sprintf                 0x08003cf1   0x40  Code  Gb  sprintf.o [3]
 sqrt                    0x080016ad         Code  Gb  sqrt.o [4]
 sqrtl                   0x080016ad         Code  Gb  sqrt.o [4]
 strchr                  0x08002c15         Code  Gb  strchr.o [5]
@@ -546,16 +552,16 @@ yfac                    0x20000068    0x4  Data  Gb  touch.o [1]
 yoff                    0x20000074    0x2  Data  Gb  touch.o [1]
 
 
-[1] = C:\project_test\Debug\Obj
+[1] = C:\tue_team2\edl_02\project_test\Debug\Obj
 [2] = command line
 [3] = dl7M_tln.a
 [4] = m7M_tl.a
 [5] = rt7M_tl.a
 [6] = shb_l.a
 
-  13 236 bytes of readonly  code memory
+  13 384 bytes of readonly  code memory
    4 280 bytes of readonly  data memory
-   4 216 bytes of readwrite data memory
+   4 217 bytes of readwrite data memory
 
 Errors: none
 Warnings: none

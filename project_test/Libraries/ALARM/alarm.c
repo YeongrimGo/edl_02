@@ -53,10 +53,16 @@ void Alarm_Start(uint16_t minutes) {
         TIM_Cmd(TIM2, ENABLE);
     }
 }
+void Buzzer_Delay(uint32_t count) {
+    while(count--) {
+        __NOP(); 
+    }
+}
 
 void Alarm_Process(void) {
     char lcd_buffer[30];
     static int32_t last_displayed_second = -1;
+    static uint8_t buzzer_toggle = 0; 
 
     switch (*p_alarm_state) {
         case STATE_COUNTDOWN:
@@ -72,6 +78,8 @@ void Alarm_Process(void) {
                     LCD_ShowString(40, 130, (u8*)lcd_buffer, BLUE, WHITE);
                 }
             }
+            
+            GPIO_ResetBits(GPIOB, GPIO_Pin_0);
             break;
 
         case STATE_ALARM_ACTIVE:
@@ -80,9 +88,20 @@ void Alarm_Process(void) {
                 LCD_Clear(RED);
                 LCD_ShowString(40, 100, (u8*)"WAKE UP!", WHITE, RED);
             }
+            if (buzzer_toggle) {
+                GPIO_SetBits(GPIOB, GPIO_Pin_0);
+                buzzer_toggle = 0;
+            } else {
+                GPIO_ResetBits(GPIOB, GPIO_Pin_0);
+                buzzer_toggle = 1;
+            }
+            // 미세한 지연을 주어 주파수(음 높낮이)를 조절할 수 있습니다.
+            Buzzer_Delay(2000); 
             break;
 
+
         case STATE_ALARM_STOPPED:
+           GPIO_ResetBits(GPIOB, GPIO_Pin_0);// 부저 OFF (High)
             {
                 uint16_t minutes = *p_elapsed_seconds / 60;
                 uint16_t seconds = *p_elapsed_seconds % 60;
@@ -95,6 +114,7 @@ void Alarm_Process(void) {
 
         case STATE_IDLE:
             // No special action in idle state
+         GPIO_ResetBits(GPIOB, GPIO_Pin_0);
             break;
     }
 }
@@ -116,6 +136,7 @@ void Alarm_Reset(void) {
     
     // Stop the timer if it was running
     TIM_Cmd(TIM2, DISABLE);
+    GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 확실히 끔
 
     // Optionally, clear the screen for the next alarm
     LCD_Clear(WHITE);

@@ -58,6 +58,17 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
+    
+    // 5. 부저용 GPIO (PB0) 추가
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); // GPIOB 클럭 활성화
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 출력 모드
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    // 초기 상태: OFF (Low Active이므로 High를 출력하여 끔)
+    GPIO_SetBits(GPIOB, GPIO_Pin_0);
+    
+
 }
 
 void USART1_Init(void) {
