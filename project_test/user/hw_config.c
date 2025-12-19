@@ -9,23 +9,6 @@
 
 extern volatile uint32_t ADC_Value[1];
 
-void RCC_Configure(void) {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_USART2, ENABLE);
-}
-
-#include "inc/hw_config.h"
-#include "stm32f10x_rcc.h"
-#include "stm32f10x_gpio.h"
-#include "stm32f10x_usart.h"
-#include "stm32f10x_exti.h"
-#include "stm32f10x_adc.h"
-#include "stm32f10x_dma.h"
-#include "misc.h"
-
-extern volatile uint32_t ADC_Value[1];
-
 // 빗물 감지 임계값 (이 값보다 낮으면 빗물로 인식)
 #define RAIN_THRESHOLD 2000
 
