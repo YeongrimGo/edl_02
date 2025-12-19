@@ -1,12 +1,22 @@
 #include "inc/hw_config.h"
 #include "stm32f10x.h"
+#include "stm32f10x_rcc.h"
+#include "stm32f10x_gpio.h"
+#include "stm32f10x_usart.h"
+#include "stm32f10x_exti.h"
+#include "stm32f10x_adc.h"
+#include "stm32f10x_dma.h"
+#include "misc.h"
 
 volatile uint32_t ADC_Value[1];
-#define RAIN_THRESHOLD 2000
+
+// [중요] 빗물 감지 임계값 (2000 -> 1000으로 수정)
+// 이 값보다 ADC 수치가 낮아져야 비가 온 것으로 인식합니다.
+// 터치하자마자 꺼지는 것을 방지하기 위해 조금 더 확실히 젖어야 작동하게 낮췄습니다.
+#define RAIN_THRESHOLD 1000
 
 void RCC_Configure(void) {
-    // [중요] ADC 클럭을 PCLK2의 1/6로 설정 (72MHz / 6 = 12MHz)
-    // 이 설정이 없으면 ADC가 오작동하여 빗물을 감지 못 할 수 있음
+    // ADC 클럭을 12MHz로 설정 (72MHz / 6) -> 필수 설정
     RCC_ADCCLKConfig(RCC_PCLK2_Div6);
     
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOA | 
@@ -20,17 +30,17 @@ void RCC_Configure(void) {
 void GPIO_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // PA1: 빗물 센서 (ADC1_CH1)
+    // 1. 빗물 센서 (PA1)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // PA0: 알람 정지 버튼 (예비용)
+    // 2. 알람 정지 버튼 (PA0 - 비상용)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // USART1 (TX: PA9, RX: PA10)
+    // 3. USART1 (PC 연결용)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -39,7 +49,7 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // USART2 (TX: PD5, RX: PD6 - Remap)
+    // 4. USART2 (블루투스 모듈)
     GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
@@ -48,13 +58,13 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-    // PB0: 부저
+    // 5. 부저 (PB0)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     GPIO_ResetBits(GPIOB, GPIO_Pin_0); 
 
-    // PC1: 터치 센서 (Rising Edge + Polling 감지용)
+    // 6. 터치 센서 (PC1) - 평소 0, 터치시 1 (Rising Edge)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD; 
     GPIO_Init(GPIOC, &GPIO_InitStructure);
@@ -71,19 +81,20 @@ void ADC_Configure(void) {
     ADC_Init(ADC1, &ADC_InitStruct);
 
     ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 1, ADC_SampleTime_28Cycles5);
-    
-    // Analog Watchdog 설정
+
+    // Analog Watchdog 설정 (값이 RAIN_THRESHOLD보다 낮아지면 인터럽트 발생)
     ADC_AnalogWatchdogSingleChannelConfig(ADC1, ADC_Channel_1);
     ADC_AnalogWatchdogCmd(ADC1, ADC_AnalogWatchdog_SingleRegEnable);
     ADC_AnalogWatchdogThresholdsConfig(ADC1, 0xFFF, RAIN_THRESHOLD);
 
-    ADC_ITConfig(ADC1, ADC_IT_AWD, DISABLE); // 초기엔 꺼둠
+    ADC_ITConfig(ADC1, ADC_IT_AWD, DISABLE); // 초기 상태: 비활성화 (터치해야 켜짐)
     ADC_Cmd(ADC1, ENABLE);
 
     ADC_ResetCalibration(ADC1);
     while (ADC_GetResetCalibrationStatus(ADC1));
     ADC_StartCalibration(ADC1);
     while (ADC_GetCalibrationStatus(ADC1));
+    
     ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 }
 
@@ -127,6 +138,8 @@ void USART2_Init(void) {
     USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_Init(USART2, &USART_InitStructure);
+    
+    // 수신 인터럽트 활성화
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 }
 
@@ -136,30 +149,35 @@ void NVIC_Configure(void) {
 
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
-    // TIM2
+    // 1. 타이머2 (알람 카운트다운)
     NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // EXTI1 (PC1 터치)
+    // 2. 터치 센서 (EXTI1)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource1);
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
+    
     NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // ADC AWD (빗물)
+    // 3. 빗물 감지 (ADC Watchdog)
     NVIC_InitStructure.NVIC_IRQChannel = ADC1_2_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0; // 최우선 순위
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // USART2
+    // 4. 블루투스 통신
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
     NVIC_Init(&NVIC_InitStructure);

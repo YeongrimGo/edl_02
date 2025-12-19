@@ -1,6 +1,8 @@
 #include "alarm.h"
 #include "lcd.h"
 #include "stm32f10x.h"
+#include "stm32f10x_tim.h"
+#include "stm32f10x_gpio.h"
 #include <stdio.h>
 
 static volatile AlarmState alarm_state = STATE_IDLE;
@@ -11,19 +13,30 @@ volatile uint32_t* p_countdown_seconds = &countdown_seconds;
 volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
 volatile AlarmState* p_alarm_state = &alarm_state;
 
-// 음계 주파수 (딜레이 값)
+// 군대 기상나팔 주파수
 #define NOTE_G  12000
 #define NOTE_C  9000 
 #define NOTE_E  7200 
 #define NOTE_G2 6000 
 
-uint16_t reveille_notes[] = { NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G, NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G };
-uint32_t reveille_beats[] = { 200, 200, 200, 200, 400, 200, 200, 200, 200, 400 };
+uint16_t reveille_notes[] = { 
+    NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G, 
+    NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G,
+    NOTE_G, NOTE_C, NOTE_G, NOTE_C, NOTE_G, NOTE_C,
+    NOTE_E, NOTE_C, NOTE_G 
+};
 
-// 부저 소리 재생 (중단 기능 포함)
+uint32_t reveille_beats[] = { 
+    200, 200, 200, 200, 400, 
+    200, 200, 200, 200, 400,
+    100, 100, 100, 100, 100, 100,
+    200, 200, 600 
+};
+
+// 부저 소리 (상태 변화 시 즉시 탈출)
 static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
     for (uint32_t i = 0; i < duration * 5; i++) {
-        // 알람이 꺼지면 즉시 함수 종료
+        // 알람 상태가 STOPPED로 바뀌면 소리 즉시 끔
         if (*p_alarm_state != STATE_ALARM_ACTIVE) return; 
         
         GPIO_SetBits(GPIOB, GPIO_Pin_0);
@@ -41,7 +54,7 @@ void Play_Reveille(void) {
         Buzzer_Sound(reveille_notes[note_idx], reveille_beats[note_idx]);
         note_idx = (note_idx + 1) % num_notes;
 
-        // 음 사이 간격 (비차단 대기)
+        // 음 사이 대기 (여기서도 상태 확인)
         for (volatile int pause = 0; pause < 50000; pause++) {
             if (*p_alarm_state != STATE_ALARM_ACTIVE) {
                 note_idx = 0;
@@ -56,7 +69,7 @@ void Play_Reveille(void) {
 void Alarm_Init(void) {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1;
-    TIM_TimeBaseStructure.TIM_Period = 10000 - 1; // 1초 주기
+    TIM_TimeBaseStructure.TIM_Period = 10000 - 1; // 1초
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
