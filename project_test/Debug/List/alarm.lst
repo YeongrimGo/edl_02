@@ -1,13 +1,13 @@
 ###############################################################################
 #
-# IAR ANSI C/C++ Compiler V8.22.1.15669/W32 for ARM       19/Dec/2025  16:47:25
+# IAR ANSI C/C++ Compiler V8.22.1.15669/W32 for ARM       19/Dec/2025  16:56:19
 # Copyright 1999-2018 IAR Systems AB.
 #
 #    Cpu mode     =  thumb
 #    Endian       =  little
 #    Source file  =  C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
 #    Command line =  
-#        -f C:\Users\pnu2\AppData\Local\Temp\EWDB24.tmp
+#        -f C:\Users\pnu2\AppData\Local\Temp\EWFF4C.tmp
 #        (C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c -D
 #        USE_STDPERIPH_DRIVER -D STM32F10X_CL -lC
 #        C:\tue_team2\edl_02\project_test\Debug\List -o
@@ -46,7 +46,7 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
       7          #include "misc.h"
       8          #include <stdio.h>
       9          
-     10          // This file's internal variables
+     10          // ?@? @€?
 
    \                                 In section .bss, align 1
      11          static volatile AlarmState alarm_state = STATE_IDLE;
@@ -63,143 +63,143 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    \                     elapsed_seconds:
    \   00000000                      DS8 4
      14          
-     15          // Public global variables for access from ISRs in other files
 
    \                                 In section .data, align 4
-     16          volatile uint32_t* p_countdown_seconds = &countdown_seconds;
+     15          volatile uint32_t* p_countdown_seconds = &countdown_seconds;
    \                     p_countdown_seconds:
    \   00000000   0x........         DC32 countdown_seconds
 
    \                                 In section .data, align 4
-     17          volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
+     16          volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
    \                     p_elapsed_seconds:
    \   00000000   0x........         DC32 elapsed_seconds
 
    \                                 In section .data, align 4
-     18          volatile AlarmState* p_alarm_state = &alarm_state;
+     17          volatile AlarmState* p_alarm_state = &alarm_state;
    \                     p_alarm_state:
    \   00000000   0x........         DC32 alarm_state
-     19          
-     20          // Internal function prototypes
-     21          static void TIM_Configure_Alarm(void);
-     22          
-     23          // --- Configuration Functions ---
-     24          
+     18          
+     19          // ?@? ?@@ ?@@?@??
+     20          static void TIM_Configure_Alarm(void);
+     21          
+     22          // --- ?@@ ?@@ ---
+     23          
 
    \                                 In section .text, align 2, keep-with-next
-     25          static void TIM_Configure_Alarm(void) {
+     24          static void TIM_Configure_Alarm(void) {
    \                     TIM_Configure_Alarm: (+1)
    \   00000000   0xB5E0             PUSH     {R5-R7,LR}
-     26              TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-     27              // 1-second interrupt setup
-     28              TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1;
+     25              TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+     26              // 1@??@@?@@ ?@@ (SystemClock??72MHz?@@ @€??
+     27              TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1;
    \   00000002   0xF641 0x401F      MOVW     R0,#+7199
    \   00000006   0xF8AD 0x0000      STRH     R0,[SP, #+0]
-     29              TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
+     28              TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
    \   0000000A   0xF242 0x700F      MOVW     R0,#+9999
    \   0000000E   0xF8AD 0x0004      STRH     R0,[SP, #+4]
-     30              TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+     29              TIM_TimeBaseStructure.TIM_ClockDivision = 0;
    \   00000012   0x2000             MOVS     R0,#+0
    \   00000014   0xF8AD 0x0006      STRH     R0,[SP, #+6]
-     31              TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+     30              TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
    \   00000018   0x2000             MOVS     R0,#+0
    \   0000001A   0xF8AD 0x0002      STRH     R0,[SP, #+2]
-     32              TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+     31              TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
    \   0000001E   0x4669             MOV      R1,SP
    \   00000020   0xF05F 0x4080      MOVS     R0,#+1073741824
    \   00000024   0x.... 0x....      BL       TIM_TimeBaseInit
-     33              TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+     32              TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
    \   00000028   0x2201             MOVS     R2,#+1
    \   0000002A   0x2101             MOVS     R1,#+1
    \   0000002C   0xF05F 0x4080      MOVS     R0,#+1073741824
    \   00000030   0x.... 0x....      BL       TIM_ITConfig
-     34          }
+     33          }
    \   00000034   0xBD07             POP      {R0-R2,PC}       ;; return
-     35          
-     36          // --- Public Functions ---
-     37          
+     34          
+     35          // --- @@@ ?@@ ---
+     36          
 
    \                                 In section .text, align 2, keep-with-next
-     38          void Alarm_Init(void) {
+     37          void Alarm_Init(void) {
    \                     Alarm_Init: (+1)
    \   00000000   0xB580             PUSH     {R7,LR}
-     39              TIM_Configure_Alarm();
+     38              TIM_Configure_Alarm();
    \   00000002   0x.... 0x....      BL       TIM_Configure_Alarm
-     40              
-     41              // [@@?] @@@????@€?€@€ ?@@@€ ?@@@??@@???
-     42              GPIO_ResetBits(GPIOB, GPIO_Pin_11);
+     39              // @@@????@€?€ ?@@
+     40              GPIO_ResetBits(GPIOB, GPIO_Pin_11);
    \   00000006   0xF44F 0x6100      MOV      R1,#+2048
    \   0000000A   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
    \   0000000C   0x.... 0x....      BL       GPIO_ResetBits
-     43          }
+     41          }
    \   00000010   0xBD01             POP      {R0,PC}          ;; return
-     44          
+     42          
+     43          // [?@@?? ?@@@@? @@@ '@?Seconds)' ?@@@?@@@ ?@@?@@??
+     44          // ?? 60???@@?@@ 60@? 10???@@?@@ 10@
 
    \                                 In section .text, align 2, keep-with-next
-     45          void Alarm_Start(uint16_t minutes) {
+     45          void Alarm_Start(uint16_t seconds) {
    \                     Alarm_Start: (+1)
    \   00000000   0xB580             PUSH     {R7,LR}
-     46              if (minutes > 0) {
+     46              if (seconds > 0) {
    \   00000002   0x0001             MOVS     R1,R0
    \   00000004   0xB289             UXTH     R1,R1            ;; ZeroExt  R1,R1,#+16,#+16
    \   00000006   0x2900             CMP      R1,#+0
-   \   00000008   0xD024             BEQ.N    ??Alarm_Start_0
-     47                  *p_countdown_seconds = minutes * 60; // @??@@@?@€?
+   \   00000008   0xD022             BEQ.N    ??Alarm_Start_0
+     47                  // [@@@ ?@@] @@@@?60???@@?@@?@@. @@? @?@@?@?@@@?@@??@€?@@ ?@@?@@.
+     48                  *p_countdown_seconds = seconds; 
    \   0000000A   0xB280             UXTH     R0,R0            ;; ZeroExt  R0,R0,#+16,#+16
-   \   0000000C   0x213C             MOVS     R1,#+60
-   \   0000000E   0x4348             MULS     R0,R1,R0
-   \   00000010   0x....             LDR.N    R1,??DataTable6_1
-   \   00000012   0x6809             LDR      R1,[R1, #+0]
-   \   00000014   0x6008             STR      R0,[R1, #+0]
-     48                  *p_alarm_state = STATE_COUNTDOWN;
-   \   00000016   0x2001             MOVS     R0,#+1
-   \   00000018   0x....             LDR.N    R1,??DataTable6_2
-   \   0000001A   0x6809             LDR      R1,[R1, #+0]
-   \   0000001C   0x7008             STRB     R0,[R1, #+0]
-     49                  *p_elapsed_seconds = 0;
-   \   0000001E   0x2000             MOVS     R0,#+0
-   \   00000020   0x....             LDR.N    R1,??DataTable6_3
-   \   00000022   0x6809             LDR      R1,[R1, #+0]
-   \   00000024   0x6008             STR      R0,[R1, #+0]
-     50                  
-     51                  // [@@?] ?@@???@@ @€?€??@@@
-     52                  GPIO_ResetBits(GPIOB, GPIO_Pin_11);
-   \   00000026   0xF44F 0x6100      MOV      R1,#+2048
-   \   0000002A   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
-   \   0000002C   0x.... 0x....      BL       GPIO_ResetBits
-     53                  
-     54                  LCD_Clear(WHITE);
-   \   00000030   0xF64F 0x70FF      MOVW     R0,#+65535
-   \   00000034   0x.... 0x....      BL       LCD_Clear
-     55                  LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
-   \   00000038   0xF64F 0x70FF      MOVW     R0,#+65535
-   \   0000003C   0x9000             STR      R0,[SP, #+0]
-   \   0000003E   0x231F             MOVS     R3,#+31
-   \   00000040   0x....             LDR.N    R2,??DataTable6_4
-   \   00000042   0x2164             MOVS     R1,#+100
-   \   00000044   0x2028             MOVS     R0,#+40
-   \   00000046   0x.... 0x....      BL       LCD_ShowString
-     56                  
-     57                  // Start timer
-     58                  TIM_Cmd(TIM2, ENABLE);
-   \   0000004A   0x2101             MOVS     R1,#+1
-   \   0000004C   0xF05F 0x4080      MOVS     R0,#+1073741824
-   \   00000050   0x.... 0x....      BL       TIM_Cmd
-     59              }
-     60          }
+   \   0000000C   0x....             LDR.N    R1,??DataTable6_1
+   \   0000000E   0x6809             LDR      R1,[R1, #+0]
+   \   00000010   0x6008             STR      R0,[R1, #+0]
+     49                  
+     50                  *p_alarm_state = STATE_COUNTDOWN;
+   \   00000012   0x2001             MOVS     R0,#+1
+   \   00000014   0x....             LDR.N    R1,??DataTable6_2
+   \   00000016   0x6809             LDR      R1,[R1, #+0]
+   \   00000018   0x7008             STRB     R0,[R1, #+0]
+     51                  *p_elapsed_seconds = 0;
+   \   0000001A   0x2000             MOVS     R0,#+0
+   \   0000001C   0x....             LDR.N    R1,??DataTable6_3
+   \   0000001E   0x6809             LDR      R1,[R1, #+0]
+   \   00000020   0x6008             STR      R0,[R1, #+0]
+     52                  
+     53                  // ?@@ ??@€?€ ?@@
+     54                  GPIO_ResetBits(GPIOB, GPIO_Pin_11);
+   \   00000022   0xF44F 0x6100      MOV      R1,#+2048
+   \   00000026   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   00000028   0x.... 0x....      BL       GPIO_ResetBits
+     55                  
+     56                  LCD_Clear(WHITE);
+   \   0000002C   0xF64F 0x70FF      MOVW     R0,#+65535
+   \   00000030   0x.... 0x....      BL       LCD_Clear
+     57                  LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
+   \   00000034   0xF64F 0x70FF      MOVW     R0,#+65535
+   \   00000038   0x9000             STR      R0,[SP, #+0]
+   \   0000003A   0x231F             MOVS     R3,#+31
+   \   0000003C   0x....             LDR.N    R2,??DataTable6_4
+   \   0000003E   0x2164             MOVS     R1,#+100
+   \   00000040   0x2028             MOVS     R0,#+40
+   \   00000042   0x.... 0x....      BL       LCD_ShowString
+     58                  
+     59                  // ?€?@@ ?@@
+     60                  TIM_Cmd(TIM2, ENABLE);
+   \   00000046   0x2101             MOVS     R1,#+1
+   \   00000048   0xF05F 0x4080      MOVS     R0,#+1073741824
+   \   0000004C   0x.... 0x....      BL       TIM_Cmd
+     61              }
+     62          }
    \                     ??Alarm_Start_0: (+1)
-   \   00000054   0xBD01             POP      {R0,PC}          ;; return
-     61          
+   \   00000050   0xBD01             POP      {R0,PC}          ;; return
+     63          
 
    \                                 In section .text, align 2, keep-with-next
-     62          void Alarm_Process(void) {
+     64          void Alarm_Process(void) {
    \                     Alarm_Process: (+1)
    \   00000000   0xB530             PUSH     {R4,R5,LR}
    \   00000002   0xB089             SUB      SP,SP,#+36
-     63              char lcd_buffer[30];
-     64              static int32_t last_displayed_second = -1;
-     65          
-     66              switch (*p_alarm_state) {
+     65              char lcd_buffer[30];
+     66              static int32_t last_displayed_second = -1;
+     67          
+     68              switch (*p_alarm_state) {
    \   00000004   0x....             LDR.N    R0,??DataTable6_2
    \   00000006   0x6800             LDR      R0,[R0, #+0]
    \   00000008   0x7800             LDRB     R0,[R0, #+0]
@@ -211,41 +211,41 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    \   00000014   0x2803             CMP      R0,#+3
    \   00000016   0xD03E             BEQ.N    ??Alarm_Process_3
    \   00000018   0xE06B             B.N      ??Alarm_Process_4
-     67                  case STATE_COUNTDOWN:
-     68                      {
-     69                          uint32_t remaining_total_seconds = *p_countdown_seconds;
+     69                  case STATE_COUNTDOWN:
+     70                      {
+     71                          uint32_t remaining_total_seconds = *p_countdown_seconds;
    \                     ??Alarm_Process_2: (+1)
    \   0000001A   0x....             LDR.N    R0,??DataTable6_1
    \   0000001C   0x6800             LDR      R0,[R0, #+0]
    \   0000001E   0x6800             LDR      R0,[R0, #+0]
-     70                          uint16_t rem_minutes = remaining_total_seconds / 60;
+     72                          uint16_t rem_minutes = remaining_total_seconds / 60;
    \   00000020   0x213C             MOVS     R1,#+60
    \   00000022   0xFBB0 0xF2F1      UDIV     R2,R0,R1
-     71                          uint16_t rem_seconds = remaining_total_seconds % 60;
+     73                          uint16_t rem_seconds = remaining_total_seconds % 60;
    \   00000026   0x213C             MOVS     R1,#+60
    \   00000028   0xFBB0 0xF3F1      UDIV     R3,R0,R1
    \   0000002C   0xFB01 0x0313      MLS      R3,R1,R3,R0
-     72          
-     73                          // Update screen every second to show countdown
-     74                          if (last_displayed_second != rem_seconds) {
+     74          
+     75                          // 1@@@???@@ @@@
+     76                          if (last_displayed_second != rem_seconds) {
    \   00000030   0x....             LDR.N    R0,??DataTable6_5
    \   00000032   0x6800             LDR      R0,[R0, #+0]
    \   00000034   0x0019             MOVS     R1,R3
    \   00000036   0xB289             UXTH     R1,R1            ;; ZeroExt  R1,R1,#+16,#+16
    \   00000038   0x4288             CMP      R0,R1
    \   0000003A   0xD012             BEQ.N    ??Alarm_Process_5
-     75                              last_displayed_second = rem_seconds;
+     77                              last_displayed_second = rem_seconds;
    \   0000003C   0x0018             MOVS     R0,R3
    \   0000003E   0xB280             UXTH     R0,R0            ;; ZeroExt  R0,R0,#+16,#+16
    \   00000040   0x....             LDR.N    R1,??DataTable6_5
    \   00000042   0x6008             STR      R0,[R1, #+0]
-     76                              sprintf(lcd_buffer, "Time: %02d min %02d sec", rem_minutes, rem_seconds);
+     78                              sprintf(lcd_buffer, "Time: %02d min %02d sec", rem_minutes, rem_seconds);
    \   00000044   0xB29B             UXTH     R3,R3            ;; ZeroExt  R3,R3,#+16,#+16
    \   00000046   0xB292             UXTH     R2,R2            ;; ZeroExt  R2,R2,#+16,#+16
    \   00000048   0x....             LDR.N    R1,??DataTable6_6
    \   0000004A   0xA801             ADD      R0,SP,#+4
    \   0000004C   0x.... 0x....      BL       sprintf
-     77                              LCD_ShowString(40, 130, (u8*)lcd_buffer, BLUE, WHITE);
+     79                              LCD_ShowString(40, 130, (u8*)lcd_buffer, BLUE, WHITE);
    \   00000050   0xF64F 0x70FF      MOVW     R0,#+65535
    \   00000054   0x9000             STR      R0,[SP, #+0]
    \   00000056   0x231F             MOVS     R3,#+31
@@ -253,31 +253,31 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    \   0000005A   0x2182             MOVS     R1,#+130
    \   0000005C   0x2028             MOVS     R0,#+40
    \   0000005E   0x.... 0x....      BL       LCD_ShowString
-     78                          }
-     79                      }
-     80                      break;
+     80                          }
+     81                      }
+     82                      break;
    \                     ??Alarm_Process_5: (+1)
    \   00000062   0xE046             B.N      ??Alarm_Process_4
-     81          
-     82                  case STATE_ALARM_ACTIVE:
-     83                      // [@@@ ?@@] ?@@ ?@@@€ ?@@ @€?€(PB11)@?@@@!
-     84                      GPIO_SetBits(GPIOB, GPIO_Pin_11);
+     83          
+     84                  case STATE_ALARM_ACTIVE:
+     85                      // ?@@ ?@@ ?@@: @€?€ @@@ (PB11 High)
+     86                      GPIO_SetBits(GPIOB, GPIO_Pin_11);
    \                     ??Alarm_Process_1: (+1)
    \   00000064   0xF44F 0x6100      MOV      R1,#+2048
    \   00000068   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
    \   0000006A   0x.... 0x....      BL       GPIO_SetBits
-     85          
-     86                      // Change screen only once when alarm starts ringing
-     87                      if (*p_elapsed_seconds == 1) { // 1@??@@ @€?@@ ???@@ @@@
+     87          
+     88                      // ?@@ @@@ (??@@@)
+     89                      if (*p_elapsed_seconds == 1) { 
    \   0000006E   0x....             LDR.N    R0,??DataTable6_3
    \   00000070   0x6800             LDR      R0,[R0, #+0]
    \   00000072   0x6800             LDR      R0,[R0, #+0]
    \   00000074   0x2801             CMP      R0,#+1
    \   00000076   0xD10D             BNE.N    ??Alarm_Process_6
-     88                          LCD_Clear(RED);
+     90                          LCD_Clear(RED);
    \   00000078   0xF44F 0x4078      MOV      R0,#+63488
    \   0000007C   0x.... 0x....      BL       LCD_Clear
-     89                          LCD_ShowString(40, 100, (u8*)"WAKE UP!", WHITE, RED);
+     91                          LCD_ShowString(40, 100, (u8*)"WAKE UP!", WHITE, RED);
    \   00000080   0xF44F 0x4078      MOV      R0,#+63488
    \   00000084   0x9000             STR      R0,[SP, #+0]
    \   00000086   0xF64F 0x73FF      MOVW     R3,#+65535
@@ -285,37 +285,37 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    \   0000008C   0x2164             MOVS     R1,#+100
    \   0000008E   0x2028             MOVS     R0,#+40
    \   00000090   0x.... 0x....      BL       LCD_ShowString
-     90                      }
-     91                      break;
+     92                      }
+     93                      break;
    \                     ??Alarm_Process_6: (+1)
    \   00000094   0xE02D             B.N      ??Alarm_Process_4
-     92          
-     93                  case STATE_ALARM_STOPPED:
-     94                      {
-     95                          // [@@@ ?@@] ?@@??@@@@?@€?€???@@
-     96                          GPIO_ResetBits(GPIOB, GPIO_Pin_11);
+     94          
+     95                  case STATE_ALARM_STOPPED:
+     96                      {
+     97                          // ?@@ ?@? ?@@: @€?€ ?@@ (PB11 Low)
+     98                          GPIO_ResetBits(GPIOB, GPIO_Pin_11);
    \                     ??Alarm_Process_3: (+1)
    \   00000096   0xF44F 0x6100      MOV      R1,#+2048
    \   0000009A   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
    \   0000009C   0x.... 0x....      BL       GPIO_ResetBits
-     97          
-     98                          uint16_t minutes = *p_elapsed_seconds / 60;
+     99          
+    100                          uint16_t minutes = *p_elapsed_seconds / 60;
    \   000000A0   0x....             LDR.N    R0,??DataTable6_3
    \   000000A2   0x6800             LDR      R0,[R0, #+0]
    \   000000A4   0x6800             LDR      R0,[R0, #+0]
    \   000000A6   0x213C             MOVS     R1,#+60
    \   000000A8   0xFBB0 0xF4F1      UDIV     R4,R0,R1
-     99                          uint16_t seconds = *p_elapsed_seconds % 60;
+    101                          uint16_t seconds = *p_elapsed_seconds % 60;
    \   000000AC   0x....             LDR.N    R0,??DataTable6_3
    \   000000AE   0x6800             LDR      R0,[R0, #+0]
    \   000000B0   0x6800             LDR      R0,[R0, #+0]
    \   000000B2   0x213C             MOVS     R1,#+60
    \   000000B4   0xFBB0 0xF5F1      UDIV     R5,R0,R1
    \   000000B8   0xFB01 0x0515      MLS      R5,R1,R5,R0
-    100                          LCD_Clear(WHITE);
+    102                          LCD_Clear(WHITE);
    \   000000BC   0xF64F 0x70FF      MOVW     R0,#+65535
    \   000000C0   0x.... 0x....      BL       LCD_Clear
-    101                          sprintf(lcd_buffer, "Elapsed: %d min %d sec", minutes, seconds);
+    103                          sprintf(lcd_buffer, "Elapsed: %d min %d sec", minutes, seconds);
    \   000000C4   0xB2AD             UXTH     R5,R5            ;; ZeroExt  R5,R5,#+16,#+16
    \   000000C6   0x002B             MOVS     R3,R5
    \   000000C8   0xB2A4             UXTH     R4,R4            ;; ZeroExt  R4,R4,#+16,#+16
@@ -323,7 +323,7 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    \   000000CC   0x....             LDR.N    R1,??DataTable6_8
    \   000000CE   0xA801             ADD      R0,SP,#+4
    \   000000D0   0x.... 0x....      BL       sprintf
-    102                          LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
+    104                          LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
    \   000000D4   0xF64F 0x70FF      MOVW     R0,#+65535
    \   000000D8   0x9000             STR      R0,[SP, #+0]
    \   000000DA   0x231F             MOVS     R3,#+31
@@ -331,15 +331,13 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    \   000000DE   0x2164             MOVS     R1,#+100
    \   000000E0   0x2028             MOVS     R0,#+40
    \   000000E2   0x.... 0x....      BL       LCD_ShowString
-    103                          
-    104                          // State reset is handled by the main loop
-    105                      }
-    106                      break;
+    105                          // ?@@ @@@?€ main @@@?@@ @@@
+    106                      }
+    107                      break;
    \   000000E6   0xE004             B.N      ??Alarm_Process_4
-    107          
-    108                  case STATE_IDLE:
-    109                      // No special action in idle state
-    110                      // ?@@ @@@??@@@
+    108          
+    109                  case STATE_IDLE:
+    110                      // ?€@??@@: @€?€ ?@@
     111                      GPIO_ResetBits(GPIOB, GPIO_Pin_11);
    \                     ??Alarm_Process_0: (+1)
    \   000000E8   0xF44F 0x6100      MOV      R1,#+2048
@@ -356,7 +354,7 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    \                     `Alarm_Process::last_displayed_second`:
    \   00000000   0xFFFFFFFF         DC32 -1
     115          
-    116          // --- External Getter/Setter Functions ---
+    116          // --- Getter/Setter Functions ---
     117          
 
    \                                 In section .text, align 2, keep-with-next
@@ -401,19 +399,19 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    \   00000016   0x6809             LDR      R1,[R1, #+0]
    \   00000018   0x6008             STR      R0,[R1, #+0]
     130              
-    131              // [@@@ ?@@] @@@ ??@€?€ ?@@ (PB11 Low)
+    131              // @@@ ??@€?€ ?@@
     132              GPIO_ResetBits(GPIOB, GPIO_Pin_11);
    \   0000001A   0xF44F 0x6100      MOV      R1,#+2048
    \   0000001E   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
    \   00000020   0x.... 0x....      BL       GPIO_ResetBits
     133              
-    134              // Stop the timer if it was running
+    134              // ?€?@@ ?@?
     135              TIM_Cmd(TIM2, DISABLE);
    \   00000024   0x2100             MOVS     R1,#+0
    \   00000026   0xF05F 0x4080      MOVS     R0,#+1073741824
    \   0000002A   0x.... 0x....      BL       TIM_Cmd
     136          
-    137              // Optionally, clear the screen for the next alarm
+    137              // ?@@ @@@?
     138              LCD_Clear(WHITE);
    \   0000002E   0xF64F 0x70FF      MOVW     R0,#+65535
    \   00000032   0x.... 0x....      BL       LCD_Clear
@@ -582,7 +580,7 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
       18  Alarm_Init
      246  Alarm_Process
       74  Alarm_Reset
-      86  Alarm_Start
+      82  Alarm_Start
       54  TIM_Configure_Alarm
        1  alarm_state
        4  countdown_seconds
@@ -596,9 +594,9 @@ C:\tue_team2\edl_02\project_test\Libraries\ALARM\alarm.c
    9 bytes in section .bss
   16 bytes in section .data
   84 bytes in section .rodata
- 534 bytes in section .text
+ 530 bytes in section .text
  
- 534 bytes of CODE  memory
+ 530 bytes of CODE  memory
   84 bytes of CONST memory
   25 bytes of DATA  memory
 
