@@ -70,7 +70,7 @@ void GPIO_Configure(void) {
 
     // 6. 빗물 감지 센서용 GPIO (PA1) 추가
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // 빗물 센서 출력 타입에 따라 IPU 또는 IN_FLOATING
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; // 빗물 센서 출력 타입에 따라 IPU 또는 IN_FLOATING
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     // 터치센서용 GPIO (PC1) 설정

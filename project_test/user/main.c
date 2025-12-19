@@ -44,12 +44,16 @@ int main(void) {
 
                 // 2단계: 터치가 이미 된 상태에서 빗물 센서(PA1) 확인
                 // 빗물 센서는 물 감지 시 Low(0)를 출력하는 경우가 많으므로 Bit_RESET으로 체크 (센서 사양에 따라 SET으로 변경)
-                if (touch_pressed == 1 && GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_1) == Bit_RESET) {
-                    *p_alarm_state = STATE_ALARM_STOPPED;
-                    TIM_Cmd(TIM2, DISABLE);
-                    touch_pressed = 0; // 플래그 초기화
+            if (touch_pressed == 1) {
+                    if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_1) == Bit_RESET) {
+                        // 물이 감지됨 (LOW)
+                        *p_alarm_state = STATE_ALARM_STOPPED;
+                        TIM_Cmd(TIM2, DISABLE);
+                        touch_pressed = 0;
+                        USART2_SendString("Step 2: Water Clear! Alarm Stopping...\r\n");
+                    }
                 }
-            } else {
+            else {
                 // 알람 상태가 아니면 플래그 항상 초기화
                 touch_pressed = 0;
             }
