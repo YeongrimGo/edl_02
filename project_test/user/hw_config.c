@@ -7,11 +7,10 @@
 #include "stm32f10x_dma.h"
 #include "misc.h"
 
-// Note: The ADC_Value is defined in main.c
 extern volatile uint32_t ADC_Value[1];
 
 void RCC_Configure(void) {
-    // GPIOC 클럭(RCC_APB2Periph_GPIOC)이 포함되어 있어야 PC7 사용 가능 (이미 포함됨)
+    // ADC1, GPIOA(PA1용), GPIOC 등 클럭 활성화
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_USART2, ENABLE);
@@ -20,17 +19,18 @@ void RCC_Configure(void) {
 void GPIO_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // [수정됨] 1. 빗물 감지 센서 (PC7) - 디지털 입력
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // Pull-up Input
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    // [수정] 1. 빗물 감지 센서 (Analog Input) - PA1 사용
+    // PC7은 ADC가 안되므로 기존 ADC 설정(Channel 1)에 맞는 PA1을 사용합니다.
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN; // 아날로그 입력 모드
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     // 2. 알람 정지 버튼 (PA0)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 3. USART1
+    // 3. USART1 (PA9: Tx, PA10: Rx)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
@@ -40,7 +40,7 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 4. USART2
+    // 4. USART2 (PD5: Tx, PD6: Rx)
     GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -56,14 +56,15 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
-    GPIO_SetBits(GPIOB, GPIO_Pin_0);
+    GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 끄기
 
-    // 터치센서 (PC1)
+    // 6. 터치센서 (PC1)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
+// 나머지 함수들은 기존과 동일
 void USART1_Init(void) {
     USART_InitTypeDef USART_InitStructure;
     USART_Cmd(USART1, ENABLE);
@@ -130,13 +131,6 @@ void NVIC_Configure(void) {
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // ADC1_2 Interrupt (사용 안 함)
-    NVIC_InitStructure.NVIC_IRQChannel = ADC1_2_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
     // USART1, 2
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
@@ -169,20 +163,17 @@ void DMA_Configure(void) {
 }
 
 void ADC_Configure(void) {
-   // PC7 디지털 센서 사용 시 ADC 설정은 크게 중요하지 않으나,
-   // 컴파일 에러 방지 및 기존 구조 유지를 위해 남겨둡니다.
    ADC_InitTypeDef ADC_InitStruct;
    ADC_InitStruct.ADC_Mode = ADC_Mode_Independent;
    ADC_InitStruct.ADC_ScanConvMode = DISABLE;
-   ADC_InitStruct.ADC_ContinuousConvMode = ENABLE;
+   ADC_InitStruct.ADC_ContinuousConvMode = ENABLE; // 연속 변환
    ADC_InitStruct.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
    ADC_InitStruct.ADC_DataAlign = ADC_DataAlign_Right;
    ADC_InitStruct.ADC_NbrOfChannel = 1;
    ADC_Init(ADC1, &ADC_InitStruct);
 
+   // [중요] Channel 1은 PA1 핀입니다.
    ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 1, ADC_SampleTime_28Cycles5);
-
-   ADC_ITConfig(ADC1, ADC_IT_AWD, DISABLE);
 
    ADC_Cmd(ADC1, ENABLE);
    ADC_ResetCalibration(ADC1);
@@ -203,8 +194,6 @@ void USART2_SendString(const char* str) {
 
 void Sensor_Mode_WaitRain(void) {
     EXTI_InitTypeDef EXTI_InitStructure;
-
-    // 1. 터치 센서 비활성화
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
@@ -214,14 +203,10 @@ void Sensor_Mode_WaitRain(void) {
 
 void Sensor_Mode_Reset(void) {
     EXTI_InitTypeDef EXTI_InitStructure;
-
-    ADC_ITConfig(ADC1, ADC_IT_AWD, DISABLE);
-
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
-
     EXTI_ClearITPendingBit(EXTI_Line1);
 }

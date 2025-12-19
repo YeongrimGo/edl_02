@@ -6,6 +6,9 @@
 #include "inc/hw_config.h"
 #include <stdio.h>
 
+// main.c에 선언된 ADC 값을 가져옴 (DMA를 통해 자동 갱신됨)
+extern volatile uint32_t ADC_Value[1];
+
 static volatile AlarmState alarm_state = STATE_IDLE;
 static volatile uint32_t countdown_seconds = 0;
 static volatile uint32_t elapsed_seconds = 0;
@@ -94,8 +97,8 @@ void Alarm_Process(void) {
             case STATE_WAIT_FOR_RAIN:
                 LCD_Clear(YELLOW);
                 LCD_ShowString(40, 50, (u8*)"WAITING RAIN...", BLACK, YELLOW);
-                LCD_ShowString(40, 100, (u8*)"DIGITAL (PC7)", BLACK, YELLOW); // 표시 변경
-                stability_count = 0; // 카운터 리셋
+                LCD_ShowString(40, 100, (u8*)"ANALOG (PA1)", BLACK, YELLOW); // 표시 변경
+                stability_count = 0;
                 break;
             case STATE_ALARM_STOPPED:
                 LCD_Clear(WHITE);
@@ -126,27 +129,28 @@ void Alarm_Process(void) {
 
         case STATE_WAIT_FOR_RAIN:
             {
-                // [수정됨] PC7 핀의 디지털 값 읽기 (DO 핀 연결)
-                uint8_t rain_bit = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7);
+                // [수정됨] ADC 값 읽기 (PA1)
+                // DMA가 ADC_Value[0]에 값을 계속 업데이트 중입니다.
+                uint16_t rain_val = (uint16_t)ADC_Value[0];
 
-                // 현재 상태 LCD 표시
-                if (rain_bit == Bit_RESET) { // 0 (Low) - 감지됨
-                    sprintf(lcd_buffer, "Sensor: WET (0)");
-                } else { // 1 (High) - 마름
-                    sprintf(lcd_buffer, "Sensor: DRY (1)");
-                }
+                // LCD에 아날로그 값 표시 (0 ~ 4095)
+                // 빗물 센서는 보통 물이 묻으면 저항이 낮아져 값이 바뀝니다.
+                // (회로 구성에 따라 물이 묻으면 값이 작아지거나 커질 수 있음)
+                sprintf(lcd_buffer, "Rain ADC: %04d", rain_val);
                 LCD_ShowString(40, 150, (u8*)lcd_buffer, BLACK, YELLOW);
 
                 // [안정화 딜레이]
-                if (stability_count < 200000) {
+                if (stability_count < 100000) {
                     stability_count++;
                 }
                 else {
-                    // 안정화 후 비 감지 (Low가 되면 알람 정지)
-                    if (rain_bit == Bit_RESET) {
+                    // [임계값 판별]
+                    // 일반적인 모듈: 마르면 4095(High), 젖으면 0(Low)에 가까워짐
+                    // 테스트해보고 이 값(2000)을 조절하세요.
+                    if (rain_val < 2000) {
                         *p_alarm_state = STATE_ALARM_STOPPED;
                         TIM_Cmd(TIM2, DISABLE);
-                        USART2_SendString("\r\nRain Detected on PC7! Alarm Stopped.\r\n");
+                        USART2_SendString("\r\nRain Detected (Analog)! Alarm Stopped.\r\n");
                     }
                 }
                 Play_Reveille();
