@@ -1,3 +1,4 @@
+// main.c
 #include "stm32f10x.h"
 #include "core_cm3.h"
 #include "misc.h"
@@ -10,49 +11,49 @@
 // --- Global variables ---
 volatile uint32_t ADC_Value[1];
 
-// ÇÁ·ÎÅäÅ¸ÀÔ ¼±¾ğ (hw_config.c¿¡ Á¤ÀÇµÊ)
+// í”„ë¡œí† íƒ€ì… ì„ ì–¸ (hw_config.cì— ì •ì˜ë¨)
 void USART1_Init(void); 
 
 int main(void) {
     SystemInit();
     
-    // 1. ÇÏµå¿ş¾î ¼³Á¤
+    // 1. í•˜ë“œì›¨ì–´ ì„¤ì •
     RCC_Configure();
     GPIO_Configure();
     NVIC_Configure();
     
-    // 2. ÁÖº¯±â±â ÃÊ±âÈ­
+    // 2. ì£¼ë³€ê¸°ê¸° ì´ˆê¸°í™”
     ADC_Configure();
     DMA_Configure();
     LCD_Init();
     Touch_Configuration();
     Touch_Adjust();
     
-    USART1_Init(); // PC(PuTTY) ¿¬°á¿ë
-    USART2_Init(); // ºí·çÅõ½º ¿¬°á¿ë
+    USART1_Init(); // PC(PuTTY) ì—°ê²°ìš©
+    USART2_Init(); // ë¸”ë£¨íˆ¬ìŠ¤ ì—°ê²°ìš©
     
     Alarm_Init();
     Alarm_Reset();
 
-    // ºÎÆÃ ¸Ş½ÃÁö¸¦ PC¿Í ºí·çÅõ½º·Î Àü¼Û (È®ÀÎ¿ë)
+    // ë¶€íŒ… ë©”ì‹œì§€ë¥¼ PCì™€ ë¸”ë£¨íˆ¬ìŠ¤ë¡œ ì „ì†¡ (í™•ì¸ìš©)
     USART2_SendString("System Ready!\r\n");
 
     while (1) {
-        // ¾Ë¶÷ »óÅÂ ¸Ó½Å ½ÇÇà (LCD ¾÷µ¥ÀÌÆ®, ºÎÀú Á¦¾î µî)
+        // ì•ŒëŒ ìƒíƒœ ë¨¸ì‹  ì‹¤í–‰ (LCD ì—…ë°ì´íŠ¸, ë¶€ì € ì œì–´ ë“±)
         Alarm_Process();
 
-        // 3. ¾Ë¶÷ÀÌ »ç¿ëÀÚ¿¡ ÀÇÇØ Á¤ÁöµÇ¾ú´ÂÁö È®ÀÎ
+        // 3. ì•ŒëŒì´ ì‚¬ìš©ìì— ì˜í•´ ì •ì§€ë˜ì—ˆëŠ”ì§€ í™•ì¸
         if (Alarm_GetState() == STATE_ALARM_STOPPED) {
             uint32_t final_elapsed_seconds = Alarm_GetElapsedSeconds();
             char msg[50];
             
-            // °æ°ú ½Ã°£À» ¹®ÀÚ¿­·Î º¯È¯ (¿¹: "Time: 5 secs\r\n")
+            // ê²½ê³¼ ì‹œê°„ì„ ë¬¸ìì—´ë¡œ ë³€í™˜ (ì˜ˆ: "Time: 5 secs\r\n")
             sprintf(msg, "Time: %d secs\r\n", final_elapsed_seconds);
             
-            // *** Áß¿ä: ºí·çÅõ½º ¸ğµâ(USART2)·Î Àü¼Û ***
+            // *** ì¤‘ìš”: ë¸”ë£¨íˆ¬ìŠ¤ ëª¨ë“ˆ(USART2)ë¡œ ì „ì†¡ ***
             USART2_SendString(msg);
 
-            // »óÅÂ¸¦ IDLE·Î ¸®¼ÂÇÏ¿© ´ÙÀ½ ¸í·É ´ë±â
+            // ìƒíƒœë¥¼ IDLEë¡œ ë¦¬ì…‹í•˜ì—¬ ë‹¤ìŒ ëª…ë ¹ ëŒ€ê¸°
             Alarm_Reset();
         }
     }

@@ -1,3 +1,4 @@
+// hw_config.c
 #include "inc/hw_config.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
@@ -11,8 +12,8 @@
 extern volatile uint32_t ADC_Value[1];
 
 void RCC_Configure(void) {
-    // ADC1, GPIOC, GPIOA, GPIOD, AFIO(리맵핑용), USART1 클럭 활성화
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
+    // ADC1, GPIOC, GPIOA, GPIOD, GPIOB(부저용), AFIO(리맵핑용), USART1 클럭 활성화
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
     
     // DMA1 클럭 활성화
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
@@ -34,7 +35,13 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // 풀업 입력
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
-    // 3. USART1 (PC 연결용: PA9 TX, PA10 RX)
+    // 3. 부저용 GPIO (PB11) - 추가됨
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 출력 (Push-Pull)
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+    // 4. USART1 (PC 연결용: PA9 TX, PA10 RX)
     // TX (PA9)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -45,7 +52,7 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 4. USART2 (블루투스용: PD5 TX, PD6 RX - 리맵핑)
+    // 5. USART2 (블루투스용: PD5 TX, PD6 RX - 리맵핑)
     GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE); // 리맵핑 활성화
     
     // TX (PD5)
@@ -133,7 +140,6 @@ void NVIC_Configure(void) {
     NVIC_Init(&NVIC_InitStructure);
 }
 
-// DMA, ADC 설정은 그대로 유지
 void DMA_Configure(void) {
    DMA_InitTypeDef DMA_InitStruct;
    DMA_InitStruct.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;
