@@ -40,46 +40,33 @@ int main(void) {
     USART2_SendString("System Ready! Touch PC1 for 3s to stop alarm.\r\n");
 
     while (1) {
-        // 알람 상태 머신 실행 (LCD 업데이트 및 수동 부저 신호 발생)
-        Alarm_Process();
+            Alarm_Process();
 
-        // --- 터치센서 3초 누름 로직 ---
-        // 알람이 실제 울리고 있는 상태에서만 체크
-        if (Alarm_GetState() == STATE_ALARM_ACTIVE) {
-
-            // 터치센서(PC1)가 눌렸는지 확인 (High Active 기준)
-            if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
-                if (!is_touching) {
-                    // 터치가 시작된 순간의 경과 시간을 기록
-                    touch_start_time = Alarm_GetElapsedSeconds();
-                    is_touching = 1;
+            // --- 터치센서 로직 (3초 누름 해제 및 즉시 종료로 변경 가능) ---
+            if (Alarm_GetState() == STATE_ALARM_ACTIVE) {
+                // 터치센서(PC1)가 눌리면 즉시 알람 종료 (요청하신 대로 단순화)
+                if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
+                    // 알람 상태를 STOPPED로 변경하여 아래 로그 출력 로직이 실행되게 함
+                    // (내부적으로 Alarm_Reset() 대신 상태만 변경하거나 필요에 따라 수정)
+                    *p_alarm_state = STATE_ALARM_STOPPED;
+                    TIM_Cmd(TIM2, DISABLE); // 타이머 정지
                 }
-
-                // 현재 경과 시간과 시작 시간의 차이가 3초 이상인지 확인
-                if ((Alarm_GetElapsedSeconds() - touch_start_time) >= 3) {
-                    Alarm_Reset(); // 알람 초기화 및 부저 정지
-                    is_touching = 0;
-                    USART2_SendString("Alarm Stopped: Touch Sensor 3s Pressed\r\n");
-                }
-            } else {
-                // 손을 떼면 카운트 초기화
-                is_touching = 0;
             }
-        } else {
-            // 알람 상태가 아니면 변수 초기화
-            is_touching = 0;
-        }
 
-        // --- 기존 알람 정지 후 로그 출력 로직 ---
-        if (Alarm_GetState() == STATE_ALARM_STOPPED) {
-            uint32_t final_elapsed_seconds = Alarm_GetElapsedSeconds();
-            char msg[50];
-            sprintf(msg, "Alarm finished. Total time: %d sec\r\n", (int)final_elapsed_seconds);
-            USART2_SendString(msg);
+            // --- 알람 종료 시 소요 시간 전송 로직 ---
+            if (Alarm_GetState() == STATE_ALARM_STOPPED) {
+                // Alarm_GetElapsedSeconds()는 알람이 울린 순간부터 카운트된 초를 반환합니다.
+                uint32_t final_elapsed_seconds = Alarm_GetElapsedSeconds();
+                char msg[60];
 
-            // 일정 시간 대기 후 다시 IDLE 상태로 전환 (사용자 확인용)
-            for(int i=0; i<2000000; i++);
-            Alarm_Reset();
+                // 블루투스로 꺼지기까지 걸린 시간 전송
+                sprintf(msg, "\r\n[ALARM OFF] Elapsed Time: %d sec\r\n", (int)final_elapsed_seconds);
+                USART2_SendString(msg);
+
+                // 처리 후 시스템 초기화 (IDLE 상태로 복귀)
+                for(int i=0; i<1000000; i++); // 짧은 대기
+                Alarm_Reset();
+            }
         }
     }
 }
