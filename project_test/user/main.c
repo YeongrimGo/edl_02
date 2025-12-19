@@ -10,49 +10,75 @@
 // --- Global variables ---
 volatile uint32_t ADC_Value[1];
 
-// ÇÁ·ÎÅäÅ¸ÀÔ ¼±¾ğ (hw_config.c¿¡ Á¤ÀÇµÊ)
-void USART1_Init(void); 
+// í”„ë¡œí† íƒ€ì… ì„ ì–¸
+void USART1_Init(void);
 
 int main(void) {
+    // 1. ì‹œìŠ¤í…œ ì´ˆê¸°í™” ë° í•˜ë“œì›¨ì–´ ì„¤ì •
     SystemInit();
-    
-    // 1. ÇÏµå¿ş¾î ¼³Á¤
     RCC_Configure();
-    GPIO_Configure();
+    GPIO_Configure(); // ì—¬ê¸°ì„œ PB0(ë¶€ì €), PC1(í„°ì¹˜ì„¼ì„œ)ì´ ì„¤ì •ë˜ì–´ ìˆì–´ì•¼ í•©ë‹ˆë‹¤.
     NVIC_Configure();
-    
-    // 2. ÁÖº¯±â±â ÃÊ±âÈ­
+
+    // 2. ì£¼ë³€ê¸°ê¸° ì´ˆê¸°í™”
     ADC_Configure();
     DMA_Configure();
     LCD_Init();
     Touch_Configuration();
     Touch_Adjust();
-    
-    USART1_Init(); // PC(PuTTY) ¿¬°á¿ë
-    USART2_Init(); // ºí·çÅõ½º ¿¬°á¿ë
-    
+
+    USART1_Init(); // PC ë””ë²„ê¹…ìš©
+    USART2_Init(); // ë¸”ë£¨íˆ¬ìŠ¤ìš©
+
     Alarm_Init();
     Alarm_Reset();
 
-    // ºÎÆÃ ¸Ş½ÃÁö¸¦ PC¿Í ºí·çÅõ½º·Î Àü¼Û (È®ÀÎ¿ë)
-    USART2_SendString("System Ready!\r\n");
+    // í„°ì¹˜ ê°ì§€ìš© ë³€ìˆ˜
+    uint32_t touch_start_time = 0;
+    uint8_t is_touching = 0;
+
+    USART2_SendString("System Ready! Touch PC1 for 3s to stop alarm.\r\n");
 
     while (1) {
-        // ¾Ë¶÷ »óÅÂ ¸Ó½Å ½ÇÇà (LCD ¾÷µ¥ÀÌÆ®, ºÎÀú Á¦¾î µî)
+        // ì•ŒëŒ ìƒíƒœ ë¨¸ì‹  ì‹¤í–‰ (LCD ì—…ë°ì´íŠ¸ ë° ìˆ˜ë™ ë¶€ì € ì‹ í˜¸ ë°œìƒ)
         Alarm_Process();
 
-        // 3. ¾Ë¶÷ÀÌ »ç¿ëÀÚ¿¡ ÀÇÇØ Á¤ÁöµÇ¾ú´ÂÁö È®ÀÎ
+        // --- í„°ì¹˜ì„¼ì„œ 3ì´ˆ ëˆ„ë¦„ ë¡œì§ ---
+        // ì•ŒëŒì´ ì‹¤ì œ ìš¸ë¦¬ê³  ìˆëŠ” ìƒíƒœì—ì„œë§Œ ì²´í¬
+        if (Alarm_GetState() == STATE_ALARM_ACTIVE) {
+
+            // í„°ì¹˜ì„¼ì„œ(PC1)ê°€ ëˆŒë ¸ëŠ”ì§€ í™•ì¸ (High Active ê¸°ì¤€)
+            if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
+                if (!is_touching) {
+                    // í„°ì¹˜ê°€ ì‹œì‘ëœ ìˆœê°„ì˜ ê²½ê³¼ ì‹œê°„ì„ ê¸°ë¡
+                    touch_start_time = Alarm_GetElapsedSeconds();
+                    is_touching = 1;
+                }
+
+                // í˜„ì¬ ê²½ê³¼ ì‹œê°„ê³¼ ì‹œì‘ ì‹œê°„ì˜ ì°¨ì´ê°€ 3ì´ˆ ì´ìƒì¸ì§€ í™•ì¸
+                if ((Alarm_GetElapsedSeconds() - touch_start_time) >= 3) {
+                    Alarm_Reset(); // ì•ŒëŒ ì´ˆê¸°í™” ë° ë¶€ì € ì •ì§€
+                    is_touching = 0;
+                    USART2_SendString("Alarm Stopped: Touch Sensor 3s Pressed\r\n");
+                }
+            } else {
+                // ì†ì„ ë–¼ë©´ ì¹´ìš´íŠ¸ ì´ˆê¸°í™”
+                is_touching = 0;
+            }
+        } else {
+            // ì•ŒëŒ ìƒíƒœê°€ ì•„ë‹ˆë©´ ë³€ìˆ˜ ì´ˆê¸°í™”
+            is_touching = 0;
+        }
+
+        // --- ê¸°ì¡´ ì•ŒëŒ ì •ì§€ í›„ ë¡œê·¸ ì¶œë ¥ ë¡œì§ ---
         if (Alarm_GetState() == STATE_ALARM_STOPPED) {
             uint32_t final_elapsed_seconds = Alarm_GetElapsedSeconds();
             char msg[50];
-            
-            // °æ°ú ½Ã°£À» ¹®ÀÚ¿­·Î º¯È¯ (¿¹: "Time: 5 secs\r\n")
-            sprintf(msg, "Time: %d secs\r\n", final_elapsed_seconds);
-            
-            // *** Áß¿ä: ºí·çÅõ½º ¸ğµâ(USART2)·Î Àü¼Û ***
+            sprintf(msg, "Alarm finished. Total time: %d sec\r\n", (int)final_elapsed_seconds);
             USART2_SendString(msg);
 
-            // »óÅÂ¸¦ IDLE·Î ¸®¼ÂÇÏ¿© ´ÙÀ½ ¸í·É ´ë±â
+            // ì¼ì • ì‹œê°„ ëŒ€ê¸° í›„ ë‹¤ì‹œ IDLE ìƒíƒœë¡œ ì „í™˜ (ì‚¬ìš©ì í™•ì¸ìš©)
+            for(int i=0; i<2000000; i++);
             Alarm_Reset();
         }
     }

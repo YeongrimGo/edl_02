@@ -67,6 +67,12 @@ void GPIO_Configure(void) {
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     // 초기 상태: OFF (Low Active이므로 High를 출력하여 끔)
     GPIO_SetBits(GPIOB, GPIO_Pin_0);
+
+    // 터치센서용 GPIO (PC1) 설정
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD; // 또는 모듈에 따라 IPU/IN_FLOATING
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
     
 
 }
