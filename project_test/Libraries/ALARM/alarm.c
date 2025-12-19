@@ -3,9 +3,12 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_tim.h"
-#include "stm32f10x_adc.h" // [추가] ADC 값 읽기용
+#include "stm32f10x_adc.h"
 #include "inc/hw_config.h" // Sensor_Mode_Reset 사용
 #include <stdio.h>
+
+// [추가] main.c에 선언된 DMA ADC 버퍼를 가져옴
+extern volatile uint32_t ADC_Value[1];
 
 static volatile AlarmState alarm_state = STATE_IDLE;
 static volatile uint32_t countdown_seconds = 0;
@@ -89,16 +92,22 @@ void Alarm_Process(void) {
     char lcd_buffer[30];
     static int32_t last_sec = -1;
 
-    // [NEW] 화면 깜빡임 방지를 위한 상태 기억 변수
+    // 화면 깜빡임 방지 및 상태 변경 감지 변수
     static AlarmState last_state = STATE_IDLE;
 
-    // 상태가 변경되었을 때 화면 초기화 (한 번만 실행)
+    // [중요] 빗물 감지 모드 진입 후 안정화 대기 카운터
+    static uint32_t stability_count = 0;
+
+    // 상태가 변경되었을 때 화면 초기화 및 변수 리셋
     if (last_state != *p_alarm_state) {
         switch (*p_alarm_state) {
             case STATE_WAIT_FOR_RAIN:
                 LCD_Clear(YELLOW);
                 LCD_ShowString(40, 50, (u8*)"WAITING RAIN...", BLACK, YELLOW);
                 LCD_ShowString(40, 100, (u8*)"GO WASH FACE!", BLACK, YELLOW);
+
+                // [리셋] 상태 진입 시 카운터 초기화
+                stability_count = 0;
                 break;
             case STATE_ALARM_STOPPED:
                 LCD_Clear(WHITE);
@@ -128,30 +137,36 @@ void Alarm_Process(void) {
             break;
 
         case STATE_WAIT_FOR_RAIN:
-            // [POLLING] 빗물 대기 상태: 센서 값 실시간 확인
+            // [POLLING] 빗물 대기 상태
             {
-                // ADC 값 읽기
-                uint16_t adc_val = ADC_GetConversionValue(ADC1);
+                // DMA 버퍼에서 값 읽기 (main.c의 ADC_Value)
+                uint16_t adc_val = (uint16_t)ADC_Value[0];
 
-                // 화면에 값 출력 (노란 배경, 검은 글씨)
+                // 화면에 현재 센서 값 출력 (디버깅용)
                 sprintf(lcd_buffer, "Rain Sensor: %04d", adc_val);
                 LCD_ShowString(40, 150, (u8*)lcd_buffer, BLACK, YELLOW);
 
-                // [CHECK] 임계값 2000 미만인지 확인
-                if (adc_val < 2000) {
-                    *p_alarm_state = STATE_ALARM_STOPPED;
-                    TIM_Cmd(TIM2, DISABLE); // 타이머 정지
-
-                    // 디버깅용 메시지
-                    USART2_SendString("\r\nRain Detected (Polling)! Alarm Stopped.\r\n");
+                // [수정 핵심] 진입 후 일정 시간(약 1~2초) 동안은 감지 무시
+                // 루프 속도에 따라 값 조정 필요 (현재 약 50만 루프)
+                if (stability_count < 200000) {
+                    stability_count++;
+                }
+                else {
+                    // 안정화 이후 실제 감지 시작
+                    // 현재: 값이 2000 미만으로 떨어지면 비가 온다고 판단 (Wet < Dry)
+                    if (adc_val < 2000) {
+                        *p_alarm_state = STATE_ALARM_STOPPED;
+                        TIM_Cmd(TIM2, DISABLE);
+                        USART2_SendString("\r\nRain Detected! Alarm Stopped.\r\n");
+                    }
                 }
 
-                Play_Reveille(); // 씻으러 갈 때도 알람은 계속 울림
+                Play_Reveille(); // 알람은 계속 울림
             }
             break;
 
         case STATE_ALARM_STOPPED:
-            GPIO_SetBits(GPIOB, GPIO_Pin_0);
+            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 소리 끄기
             sprintf(lcd_buffer, "Stopped: %d sec", (int)*p_elapsed_seconds);
             LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
             break;
