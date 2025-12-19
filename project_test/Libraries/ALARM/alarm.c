@@ -75,11 +75,16 @@ void Alarm_Start(uint16_t seconds) {
     }
 }
 
+// alarm.c 파일 내부 수정
+
 void Alarm_Process(void) {
     char lcd_buffer[30];
     static int32_t last_sec = -1;
     static AlarmState last_state = STATE_IDLE;
     static uint32_t stability_count = 0;
+
+    // [수정] 소리 재생 빈도 조절을 위한 카운터 변수
+    static uint32_t sound_tick = 0;
 
     // 초음파 센서 변수
     static uint32_t dist_L = 0, dist_C = 0, dist_R = 0;
@@ -88,7 +93,7 @@ void Alarm_Process(void) {
     // 장애물 인식 거리 (cm)
     const uint32_t OBS_THRESHOLD = 25;
 
-    // 상태 변경 시 화면 한 번 초기화
+    // 상태 변경 시 화면 초기화 로직 (기존과 동일)
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
@@ -124,33 +129,45 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_ACTIVE:
-            // === 도망가는 알람 모드 ===
+            // === 도망가는 알람 모드 (자율주행 개선) ===
             LCD_ShowString(40, 50, (u8*)"RUNAWAY ALARM!", WHITE, RED);
-            Play_Reveille();
 
-            // 자율주행 로직
+            // 1. 센서 측정 (간섭 방지를 위해 측정 사이에 미세한 딜레이 추가)
             dist_L = Get_Ultrasonic_Dist(1);
+            for(volatile int i=0; i<10000; i++); // 단순 지연
+
             dist_C = Get_Ultrasonic_Dist(2);
+            for(volatile int i=0; i<10000; i++); // 단순 지연
+
             dist_R = Get_Ultrasonic_Dist(3);
 
             sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
             LCD_ShowString(20, 110, (u8*)lcd_buffer, YELLOW, RED);
 
+            // 2. 주행 로직 (0이 나오면 센서 에러나 먼 거리이므로 전진하지 않도록 방어 코드 추가 가능)
+            // 우선순위: 중앙 -> 왼쪽 -> 오른쪽
             if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
                 Motor_Backward();
                 LCD_ShowString(100, 140, (u8*)"BACKWARD", YELLOW, RED);
             }
             else if (dist_L > 0 && dist_L < OBS_THRESHOLD) {
-                Motor_TurnRight();
+                Motor_TurnRight(); // 왼쪽에 장애물 -> 우회전
                 LCD_ShowString(100, 140, (u8*)"RIGHT   ", YELLOW, RED);
             }
             else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
-                Motor_TurnLeft();
+                Motor_TurnLeft(); // 오른쪽에 장애물 -> 좌회전
                 LCD_ShowString(100, 140, (u8*)"LEFT    ", YELLOW, RED);
             }
             else {
                 Motor_Forward();
                 LCD_ShowString(100, 140, (u8*)"FORWARD ", WHITE, RED);
+            }
+
+            // 3. 소리 재생 (매 루프마다 재생하면 주행이 끊기므로 5번에 1번만 재생)
+            sound_tick++;
+            if (sound_tick > 5) {
+                Play_Reveille();
+                sound_tick = 0;
             }
             break;
 
@@ -168,7 +185,13 @@ void Alarm_Process(void) {
                         TIM_Cmd(TIM2, DISABLE);
                     }
                 }
-                Play_Reveille();
+
+                // 빗물 대기 모드에서도 소리가 너무 잦으면 센서 확인이 느려질 수 있음
+                sound_tick++;
+                if (sound_tick > 10) {
+                    Play_Reveille();
+                    sound_tick = 0;
+                }
             }
             break;
 
@@ -181,17 +204,15 @@ void Alarm_Process(void) {
 
         case STATE_IDLE:
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
-            Motor_Stop(); // 모터는 끄고
+            Motor_Stop();
 
-            // === [수정됨] 센서 값은 계속 확인 ===
             sensor_timer++;
-            if (sensor_timer > 2000) { // 반응 속도 빠르게 (딜레이 줄임)
+            if (sensor_timer > 2000) {
                 dist_L = Get_Ultrasonic_Dist(1);
                 dist_C = Get_Ultrasonic_Dist(2);
                 dist_R = Get_Ultrasonic_Dist(3);
                 sensor_timer = 0;
 
-                // LCD에 값 표시
                 sprintf(lcd_buffer, "L:%3d", (int)dist_L);
                 LCD_ShowString(20, 120, (u8*)lcd_buffer, BLUE, WHITE);
 

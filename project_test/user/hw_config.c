@@ -183,7 +183,7 @@ uint32_t Get_Ultrasonic_Dist(uint8_t sensor_id) {
     Delay_us(15);
     GPIO_ResetBits(TRIG_PORT, TRIG_PIN);
 
-    uint32_t timeout = 500000;
+    uint32_t timeout = 50000;
     while (GPIO_ReadInputDataBit(ECHO_PORT, ECHO_PIN) == RESET) {
         if (timeout-- == 0) return 0;
     }
