@@ -191,7 +191,6 @@ uint32_t Get_Ultrasonic_Dist(uint8_t sensor_id) {
     uint32_t count = 0;
     while (GPIO_ReadInputDataBit(ECHO_PORT, ECHO_PIN) == SET) {
         count++;
-        Delay_us(1);
         if (count > 100000) break;
     }
 
