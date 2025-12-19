@@ -15,7 +15,6 @@ volatile AlarmState* p_alarm_state = &alarm_state;
 void Beep_Delay(volatile uint32_t count) { while (count--); }
 
 void Alarm_Init(void) {
-    // TIM2 설정 (1초 인터럽트)
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1;
     TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
@@ -23,7 +22,7 @@ void Alarm_Init(void) {
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
     TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
-    GPIO_SetBits(GPIOB, GPIO_Pin_11); // Low Trigger이므로 High가 OFF
+    GPIO_SetBits(GPIOC, GPIO_Pin_6); // OFF (High)
 }
 
 void Alarm_Start(uint16_t seconds) {
@@ -31,7 +30,7 @@ void Alarm_Start(uint16_t seconds) {
         *p_countdown_seconds = seconds;
         *p_alarm_state = STATE_COUNTDOWN;
         *p_elapsed_seconds = 0;
-        GPIO_SetBits(GPIOB, GPIO_Pin_11); // 소리 정지 상태
+        GPIO_SetBits(GPIOC, GPIO_Pin_6); 
         LCD_Clear(WHITE);
         TIM_Cmd(TIM2, ENABLE);
     }
@@ -51,11 +50,13 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_ACTIVE:
-            // [수정] 수동 부저(Low Trigger) 떨림 발생 로직
-            GPIO_ResetBits(GPIOB, GPIO_Pin_11); // 소리 ON (Low)
-            Beep_Delay(1000); 
-            GPIO_SetBits(GPIOB, GPIO_Pin_11);   // 소리 OFF (High)
-            Beep_Delay(1000); 
+            // [수동 부저 떨림 발생] PC6 사용
+            for(int i=0; i<150; i++) {
+                GPIO_ResetBits(GPIOC, GPIO_Pin_6); // ON (Low)
+                Beep_Delay(700); 
+                GPIO_SetBits(GPIOC, GPIO_Pin_6);   // OFF (High)
+                Beep_Delay(700); 
+            }
 
             if (*p_elapsed_seconds == 1) { 
                 LCD_Clear(RED);
@@ -64,11 +65,11 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_STOPPED:
-            GPIO_SetBits(GPIOB, GPIO_Pin_11); // 정지 시 High(OFF) 유지
+            GPIO_SetBits(GPIOC, GPIO_Pin_6); 
             break;
 
         default:
-            GPIO_SetBits(GPIOB, GPIO_Pin_11);
+            GPIO_SetBits(GPIOC, GPIO_Pin_6);
             break;
     }
 }
@@ -78,7 +79,7 @@ uint32_t Alarm_GetElapsedSeconds(void) { return *p_elapsed_seconds; }
 void Alarm_Reset(void) {
     *p_alarm_state = STATE_IDLE;
     *p_elapsed_seconds = 0;
-    GPIO_SetBits(GPIOB, GPIO_Pin_11); // OFF
+    GPIO_SetBits(GPIOC, GPIO_Pin_6); 
     TIM_Cmd(TIM2, DISABLE);
     LCD_Clear(WHITE);
     LCD_ShowString(40, 100, (u8*)"Alarm Idle", BLUE, WHITE);
