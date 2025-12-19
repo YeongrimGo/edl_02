@@ -109,24 +109,26 @@ void USART2_Init(void) {
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 }
 
+// hw_config.c 내부의 NVIC_Configure 함수 수정
+
 void NVIC_Configure(void) {
     NVIC_InitTypeDef NVIC_InitStructure;
     EXTI_InitTypeDef EXTI_InitStructure;
 
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
-    // TIM2 (1초 카운트다운)
+    // 1. TIM2 (1초 카운트다운)
     NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // EXTI0 (알람 정지 버튼 PA0)
+    // 2. EXTI0 (알람 정지 물리 버튼 PA0)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource0);
     EXTI_InitStructure.EXTI_Line = EXTI_Line0;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // 버튼 누름 감지
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // 버튼 누름(Falling)
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
 
@@ -135,14 +137,33 @@ void NVIC_Configure(void) {
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
 
-    // USART1 (PC 통신)
+    // [NEW] 3. EXTI1 (터치 센서 PC1) 추가
+    // PC1을 EXTI 라인 1에 연결
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource1);
+
+    EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    // 터치 센서는 닿았을 때 High(Bit_SET)가 되므로 Rising Edge 감지
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    // EXTI1 인터럽트 활성화
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; // 버튼과 동급 중요도
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+
+    // 4. USART1 (PC 통신)
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // USART2 (블루투스)
+    // 5. USART2 (블루투스)
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;

@@ -78,3 +78,21 @@ void USART2_IRQHandler(void) {
         USART_ClearITPendingBit(USART2, USART_IT_RXNE);
     }
 }
+
+// stm32f10x_it.c 맨 아래 혹은 적절한 위치에 추가
+
+// [NEW] 터치 센서용 인터럽트 핸들러 (PC1 -> EXTI1)
+void EXTI1_IRQHandler(void) {
+    // EXTI Line 1에서 인터럽트가 발생했는지 확인
+    if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
+
+        // 알람이 울리는 중(ACTIVE)일 때만 동작
+        if (*p_alarm_state == STATE_ALARM_ACTIVE) {
+            *p_alarm_state = STATE_ALARM_STOPPED;
+            TIM_Cmd(TIM2, DISABLE); // 타이머 정지
+        }
+
+        // 인터럽트 플래그 클리어 (필수)
+        EXTI_ClearITPendingBit(EXTI_Line1);
+    }
+}
