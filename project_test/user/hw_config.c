@@ -9,16 +9,15 @@
 
 extern volatile uint32_t ADC_Value[1];
 
-// [추가] 미세 시간 지연 함수 (초음파 센서용)
 static void Delay_us(uint32_t us) {
-    us *= 12;
-    while (us--) {
+    volatile uint32_t count = us * 12;
+    while (count--) {
         __NOP();
     }
 }
 
 void RCC_Configure(void) {
-    // ADC1, GPIOA, GPIOC, GPIOD, GPIOB, AFIO, USART1 클럭 활성화
+    // GPIOA, GPIOB, GPIOC, GPIOD, AFIO, ADC1, USART1 클럭 활성화
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_USART2, ENABLE);
@@ -27,17 +26,17 @@ void RCC_Configure(void) {
 void GPIO_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // 1. 빗물 감지 센서 (Analog Input) - PA1
+    // 1. 빗물 감지 (PA1)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 2. 알람 정지 버튼 (PA0)
+    // 2. 버튼 (PA0)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 3. USART1 (PA9: Tx, PA10: Rx)
+    // 3. USART1
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
@@ -47,7 +46,7 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 4. USART2 (PD5: Tx, PD6: Rx)
+    // 4. USART2
     GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -63,7 +62,7 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
-    GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 끄기
+    GPIO_SetBits(GPIOB, GPIO_Pin_0);
 
     // 6. 터치센서 (PC1)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
@@ -71,88 +70,131 @@ void GPIO_Configure(void) {
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
-// [추가] 초음파 센서 설정 함수
 void Ultrasonic_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // 1번 센서 (왼쪽): TRIG=PA4, ECHO=PA5
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4; // TRIG
+    // PA4(Trig), PA5(Echo) - Left
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5; // ECHO
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 2번 센서 (정면): TRIG=PA6, ECHO=PA7
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; // TRIG
+    // PA6(Trig), PA7(Echo) - Center
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7; // ECHO
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 3번 센서 (오른쪽): TRIG=PB10, ECHO=PB11
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10; // TRIG
+    // PB10(Trig), PB11(Echo) - Right
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11; // ECHO
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    // Trig 핀 초기화 (Low)
     GPIO_ResetBits(GPIOA, GPIO_Pin_4 | GPIO_Pin_6);
     GPIO_ResetBits(GPIOB, GPIO_Pin_10);
 }
 
-// [추가] 거리 측정 함수 (cm 단위 리턴)
-// sensor_id: 1(왼쪽), 2(정면), 3(오른쪽)
+// [추가] 모터 핀 설정 (PB5, PB6, PB7, PB8)
+void Motor_Configure(void) {
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    // PB5(IN1), PB6(IN2), PB7(IN3), PB8(IN4)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+    // 초기 상태: 정지
+    Motor_Stop();
+}
+
+// === 모터 제어 함수 구현 ===
+// IN1(PB5), IN2(PB6) : 왼쪽 모터
+// IN3(PB7), IN4(PB8) : 오른쪽 모터
+
+void Motor_Forward(void) {
+    // 왼쪽 전진 (IN1=H, IN2=L)
+    GPIO_SetBits(GPIOB, GPIO_Pin_5);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_6);
+    // 오른쪽 전진 (IN3=H, IN4=L)
+    GPIO_SetBits(GPIOB, GPIO_Pin_7);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+}
+
+void Motor_Backward(void) {
+    // 왼쪽 후진 (IN1=L, IN2=H)
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
+    GPIO_SetBits(GPIOB, GPIO_Pin_6);
+    // 오른쪽 후진 (IN3=L, IN4=H)
+    GPIO_ResetBits(GPIOB, GPIO_Pin_7);
+    GPIO_SetBits(GPIOB, GPIO_Pin_8);
+}
+
+void Motor_TurnLeft(void) {
+    // 왼쪽 정지/후진, 오른쪽 전진 -> 좌회전
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_6); // 왼쪽 정지 (필요 시 후진으로 변경 가능)
+
+    GPIO_SetBits(GPIOB, GPIO_Pin_7);   // 오른쪽 전진
+    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+}
+
+void Motor_TurnRight(void) {
+    // 왼쪽 전진, 오른쪽 정지/후진 -> 우회전
+    GPIO_SetBits(GPIOB, GPIO_Pin_5);   // 왼쪽 전진
+    GPIO_ResetBits(GPIOB, GPIO_Pin_6);
+
+    GPIO_ResetBits(GPIOB, GPIO_Pin_7); // 오른쪽 정지
+    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+}
+
+void Motor_Stop(void) {
+    // 모두 Low -> 정지
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8);
+}
+
 uint32_t Get_Ultrasonic_Dist(uint8_t sensor_id) {
     GPIO_TypeDef* TRIG_PORT;
     uint16_t TRIG_PIN;
     GPIO_TypeDef* ECHO_PORT;
     uint16_t ECHO_PIN;
 
-    // 센서 선택
     switch(sensor_id) {
-        case 1: // PA4, PA5
-            TRIG_PORT = GPIOA; TRIG_PIN = GPIO_Pin_4;
-            ECHO_PORT = GPIOA; ECHO_PIN = GPIO_Pin_5;
-            break;
-        case 2: // PA6, PA7
-            TRIG_PORT = GPIOA; TRIG_PIN = GPIO_Pin_6;
-            ECHO_PORT = GPIOA; ECHO_PIN = GPIO_Pin_7;
-            break;
-        case 3: // PB10, PB11
-            TRIG_PORT = GPIOB; TRIG_PIN = GPIO_Pin_10;
-            ECHO_PORT = GPIOB; ECHO_PIN = GPIO_Pin_11;
-            break;
+        case 1: TRIG_PORT = GPIOA; TRIG_PIN = GPIO_Pin_4; ECHO_PORT = GPIOA; ECHO_PIN = GPIO_Pin_5; break;
+        case 2: TRIG_PORT = GPIOA; TRIG_PIN = GPIO_Pin_6; ECHO_PORT = GPIOA; ECHO_PIN = GPIO_Pin_7; break;
+        case 3: TRIG_PORT = GPIOB; TRIG_PIN = GPIO_Pin_10; ECHO_PORT = GPIOB; ECHO_PIN = GPIO_Pin_11; break;
         default: return 0;
     }
 
-    // 1. Trigger 신호 발생 (10us High)
+    GPIO_ResetBits(TRIG_PORT, TRIG_PIN);
+    Delay_us(5);
     GPIO_SetBits(TRIG_PORT, TRIG_PIN);
-    Delay_us(10);
+    Delay_us(15);
     GPIO_ResetBits(TRIG_PORT, TRIG_PIN);
 
-    // 2. Echo 응답 대기
-    uint32_t timeout = 100000;
+    uint32_t timeout = 500000;
     while (GPIO_ReadInputDataBit(ECHO_PORT, ECHO_PIN) == RESET) {
         if (timeout-- == 0) return 0;
     }
 
-    // 3. Pulse 폭 측정
     uint32_t count = 0;
     while (GPIO_ReadInputDataBit(ECHO_PORT, ECHO_PIN) == SET) {
         count++;
         Delay_us(1);
-        if (count > 50000) break;
+        if (count > 100000) break;
     }
 
-    // 4. 거리 계산 (대략적인 보정치 58 사용)
     return count / 58;
 }
 
@@ -188,14 +230,12 @@ void NVIC_Configure(void) {
 
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
-    // TIM2
     NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // EXTI0 (버튼)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource0);
     EXTI_InitStructure.EXTI_Line = EXTI_Line0;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -208,7 +248,6 @@ void NVIC_Configure(void) {
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
 
-    // EXTI1 (터치센서)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource1);
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -222,7 +261,6 @@ void NVIC_Configure(void) {
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // USART1, 2
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;

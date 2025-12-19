@@ -15,7 +15,8 @@ int main(void) {
     SystemInit();
     RCC_Configure();
     GPIO_Configure();
-    Ultrasonic_Configure(); // [추가됨] 초음파 센서 초기화
+    Ultrasonic_Configure();
+    Motor_Configure(); // [추가] 모터 핀 초기화
     NVIC_Configure();
     ADC_Configure();
     DMA_Configure();
@@ -27,7 +28,7 @@ int main(void) {
     Alarm_Init();
     Alarm_Reset();
 
-    USART2_SendString("System Ready! Enter seconds to set alarm.\r\n");
+    USART2_SendString("System Ready with Auto Drive!\r\n");
 
     while (1) {
         Alarm_Process();
@@ -38,7 +39,7 @@ int main(void) {
             sprintf(report, "\r\n[STOP] Duration: %d sec\r\n", (int)final_time);
             USART2_SendString(report);
 
-            for(volatile int i=0; i<5000000; i++); // 결과 확인용 지연
+            for(volatile int i=0; i<5000000; i++);
             Alarm_Reset();
         }
     }
