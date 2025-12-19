@@ -1,69 +1,45 @@
 #include "alarm.h"
 #include "lcd.h"
-#include "stm32f10x_rcc.h"
-#include "stm32f10x_gpio.h"
 #include "stm32f10x_tim.h"
 #include <stdio.h>
+
+#define RAIN_THRESHOLD 1500 // 빗물 감지 임계값 (환경에 따라 조절)
 
 static volatile AlarmState alarm_state = STATE_IDLE;
 static volatile uint32_t countdown_seconds = 0;
 static volatile uint32_t elapsed_seconds = 0;
+volatile uint8_t is_rain_mode_active = 0; // 터치 후 1로 변경됨
 
 volatile uint32_t* p_countdown_seconds = &countdown_seconds;
 volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
 volatile AlarmState* p_alarm_state = &alarm_state;
 
-// --- 기상나팔 멜로디 데이터 ---
-// 음계 주파수(루프 지연 값으로 근사치 조절)
-#define NOTE_G  3000
-#define NOTE_C  2250
-#define NOTE_E  1800
-#define NOTE_G2 1500
+extern volatile uint32_t ADC_Value[2]; // 0:기존, 1:빗물(PA1)
 
-// 기상나팔 음계 구성
-uint16_t reveille_notes[] = {
-    NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G,
-    NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G,
-    NOTE_G, NOTE_C, NOTE_G, NOTE_C, NOTE_G, NOTE_C,
-    NOTE_E, NOTE_C, NOTE_G
-};
-// 각 음의 길이 (단위: 루프 횟수)
-uint32_t reveille_beats[] = {
-    100, 100, 100, 100, 200,
-    100, 100, 100, 100, 200,
-    50, 50, 50, 50, 50, 50,
-    100, 100, 300
-};
+// 군대 기상나팔 음계 및 박자
+uint16_t reveille_notes[] = {2500, 1800, 1500, 1800, 2500, 2500, 1800, 1500, 1800, 2500};
+uint32_t reveille_beats[] = {150, 150, 150, 150, 300, 150, 150, 150, 150, 300};
 
-static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
-    for (uint32_t i = 0; i < duration; i++) {
-        GPIO_SetBits(GPIOB, GPIO_Pin_0);
-        for (volatile int d = 0; d < pitch; d++);
-        GPIO_ResetBits(GPIOB, GPIO_Pin_0);
-        for (volatile int d = 0; d < pitch; d++);
-
-        // 중간에 알람이 꺼졌는지 확인 (빠른 반응성)
-        if (*p_alarm_state != STATE_ALARM_ACTIVE) return;
-    }
-}
-
-void Play_Reveille(void) {
+static void Play_Reveille_Step(void) {
     static int note_idx = 0;
-    int num_notes = sizeof(reveille_notes) / sizeof(reveille_notes[0]);
+    static int sub_step = 0;
 
-    if (*p_alarm_state == STATE_ALARM_ACTIVE) {
-        Buzzer_Sound(reveille_notes[note_idx], reveille_beats[note_idx]);
-        note_idx = (note_idx + 1) % num_notes; // 무한 반복
-        for (volatile int pause = 0; pause < 50000; pause++); // 음 간격
-    } else {
-        note_idx = 0;
+    // 부저 토글로 소리 생성
+    for (volatile int i = 0; i < reveille_notes[note_idx]; i++);
+    GPIO_WriteBit(GPIOB, GPIO_Pin_0, (BitAction)(1 - GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_0)));
+
+    sub_step++;
+    if (sub_step > reveille_beats[note_idx]) {
+        sub_step = 0;
+        note_idx = (note_idx + 1) % 10;
+        for (volatile int p = 0; p < 10000; p++); // 음 간격
     }
 }
 
 void Alarm_Init(void) {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-    TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1;
-    TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
+    TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1; // 10kHz
+    TIM_TimeBaseStructure.TIM_Period = 10000 - 1;  // 1초 주기
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
@@ -71,43 +47,47 @@ void Alarm_Init(void) {
 }
 
 void Alarm_Start(uint16_t seconds) {
-    if (seconds > 0) {
-        *p_countdown_seconds = seconds; // 분 단위 연산 제거 -> 초 단위로 직접 입력
-        *p_alarm_state = STATE_COUNTDOWN;
-        *p_elapsed_seconds = 0;
-
-        LCD_Clear(WHITE);
-        LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
-        TIM_Cmd(TIM2, ENABLE);
-    }
+    *p_countdown_seconds = seconds;
+    *p_alarm_state = STATE_COUNTDOWN;
+    *p_elapsed_seconds = 0;
+    is_rain_mode_active = 0;
+    TIM_Cmd(TIM2, ENABLE);
 }
 
 void Alarm_Process(void) {
-    char lcd_buffer[30];
-    static int32_t last_sec = -1;
+    char buf[32];
+
+    // [로직] 알람 중 터치(PC1) 감지 시 -> 빗물 모드 활성화
+    if (*p_alarm_state == STATE_ALARM_ACTIVE && is_rain_mode_active == 0) {
+        if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
+            is_rain_mode_active = 1;
+        }
+    }
+
+    // [로직] 빗물 모드 활성화 중 물(PA1) 감지 시 -> 알람 종료
+    if (is_rain_mode_active && ADC_Value[1] < RAIN_THRESHOLD) {
+        *p_alarm_state = STATE_ALARM_STOPPED;
+        TIM_Cmd(TIM2, DISABLE);
+    }
 
     switch (*p_alarm_state) {
         case STATE_COUNTDOWN:
-            if (last_sec != *p_countdown_seconds) {
-                last_sec = *p_countdown_seconds;
-                sprintf(lcd_buffer, "Remaining: %02d sec", (int)last_sec);
-                LCD_ShowString(40, 130, (u8*)lcd_buffer, BLUE, WHITE);
-            }
-            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 끔 (High Active인 경우 ResetBits로 변경 필요)
+            sprintf(buf, "Countdown: %d sec", (int)*p_countdown_seconds);
+            LCD_ShowString(40, 130, (u8*)buf, BLUE, WHITE);
+            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 OFF
             break;
 
         case STATE_ALARM_ACTIVE:
-            if (*p_elapsed_seconds == 0) { // 진입 직후 한 번만
-                LCD_Clear(RED);
-                LCD_ShowString(40, 100, (u8*)"WAKE UP!", WHITE, RED);
-            }
-            Play_Reveille(); // 군대 기상나팔 연주
+            Play_Reveille_Step(); // 기상나팔 연주
+            LCD_ShowString(40, 100, (u8*)"!!! WAKE UP !!!", WHITE, RED);
+            if (is_rain_mode_active)
+                LCD_ShowString(40, 160, (u8*)"RAIN MODE: ON ", GREEN, RED);
+            else
+                LCD_ShowString(40, 160, (u8*)"TOUCH TO ARM  ", WHITE, RED);
             break;
 
         case STATE_ALARM_STOPPED:
-            GPIO_SetBits(GPIOB, GPIO_Pin_0);
-            sprintf(lcd_buffer, "Stopped: %d sec", (int)*p_elapsed_seconds);
-            LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
+            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 OFF
             break;
 
         case STATE_IDLE:
@@ -121,10 +101,10 @@ uint32_t Alarm_GetElapsedSeconds(void) { return *p_elapsed_seconds; }
 
 void Alarm_Reset(void) {
     *p_alarm_state = STATE_IDLE;
-    *p_elapsed_seconds = 0;
     *p_countdown_seconds = 0;
+    *p_elapsed_seconds = 0;
+    is_rain_mode_active = 0;
     TIM_Cmd(TIM2, DISABLE);
     GPIO_SetBits(GPIOB, GPIO_Pin_0);
     LCD_Clear(WHITE);
-    LCD_ShowString(40, 100, (u8*)"Alarm Idle", BLUE, WHITE);
 }
