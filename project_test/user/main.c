@@ -7,6 +7,8 @@
 #include "inc/hw_config.h" 
 #include <stdio.h>
 
+extern volatile AlarmState* p_alarm_state;
+
 int main(void) {
     SystemInit();
     RCC_Configure();
