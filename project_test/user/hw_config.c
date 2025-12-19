@@ -68,6 +68,11 @@ void GPIO_Configure(void) {
     // 초기 상태: OFF (Low Active이므로 High를 출력하여 끔)
     GPIO_SetBits(GPIOB, GPIO_Pin_0);
 
+    // 6. 빗물 감지 센서용 GPIO (PA1) 추가
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // 빗물 센서 출력 타입에 따라 IPU 또는 IN_FLOATING
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
     // 터치센서용 GPIO (PC1) 설정
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
