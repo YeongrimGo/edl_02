@@ -9,6 +9,8 @@
 
 extern volatile AlarmState* p_alarm_state;
 
+volatile uint32_t ADC_Value[1];
+
 int main(void) {
     SystemInit();
     RCC_Configure();
