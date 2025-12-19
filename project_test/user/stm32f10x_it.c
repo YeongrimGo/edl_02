@@ -6,12 +6,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-// --- Alarm ¸ðµâÀÇ º¯¼öµé ---
+// --- Alarm ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ---
 extern volatile uint32_t* p_countdown_seconds;
 extern volatile uint32_t* p_elapsed_seconds;
 extern volatile AlarmState* p_alarm_state;
 
-// --- ¼ö½Å ¹öÆÛ ---
+// --- ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ---
 char rx_buffer[50];
 uint8_t rx_index = 0;
 
@@ -32,7 +32,7 @@ void SysTick_Handler(void) {}
 /* STM32F10x Peripherals Interrupt Handlers                   */
 /******************************************************************************/
 
-// 1. Å¸ÀÌ¸Ó ÀÎÅÍ·´Æ®: Ä«¿îÆ®´Ù¿î ¹× °æ°ú ½Ã°£ ÃøÁ¤
+// 1. Å¸ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½Í·ï¿½Æ®: Ä«ï¿½ï¿½Æ®ï¿½Ù¿ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½
 void TIM2_IRQHandler(void) {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
@@ -42,79 +42,77 @@ void TIM2_IRQHandler(void) {
                 (*p_countdown_seconds)--;
             }
             if (*p_countdown_seconds == 0) {
-                *p_alarm_state = STATE_ALARM_ACTIVE; // ºÎÀú ¿ï¸² ½ÃÀÛ
+                *p_alarm_state = STATE_ALARM_ACTIVE; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¸² ï¿½ï¿½ï¿½ï¿½
             }
         } else if (*p_alarm_state == STATE_ALARM_ACTIVE) {
-            (*p_elapsed_seconds)++; // ºÎÀú ¿ï¸° ½Ã°£ ÃøÁ¤
+            (*p_elapsed_seconds)++; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¸° ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½
         }
     }
 }
 
-// 2. ¹öÆ° ÀÎÅÍ·´Æ® (PA0): ¾Ë¶÷ ²ô±â
+// 2. ï¿½ï¿½Æ° ï¿½ï¿½ï¿½Í·ï¿½Æ® (PA0): ï¿½Ë¶ï¿½ ï¿½ï¿½ï¿½ï¿½
 void EXTI0_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line0) != RESET) {
-        // ¾Ë¶÷ÀÌ ¿ï¸®°í ÀÖÀ» ¶§¸¸ ¹öÆ° µ¿ÀÛ
+        // ï¿½Ë¶ï¿½ï¿½ï¿½ ï¿½ï¸®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {
-            *p_alarm_state = STATE_ALARM_STOPPED; // ¸ÞÀÎ ·çÇÁ¿¡¼­ °¨Áö ÈÄ Àü¼Û
-            TIM_Cmd(TIM2, DISABLE); // Å¸ÀÌ¸Ó Á¤Áö
+            *p_alarm_state = STATE_ALARM_STOPPED; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+            TIM_Cmd(TIM2, DISABLE); // Å¸ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½
         }
         EXTI_ClearITPendingBit(EXTI_Line0);
     }
 }
 
-// 3. USART1 (PC -> STM32): PuTTY¿¡¼­ Å¸ÀÌÇÎÇÑ ³»¿ëÀ» ºí·çÅõ½º·Î ÆÐ½º½º·ç
+// 3. USART1 (PC -> STM32): PuTTYï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ð½ï¿½ï¿½ï¿½ï¿½ï¿½
 void USART1_IRQHandler(void) {
     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
         uint16_t word = USART_ReceiveData(USART1);
         
-        // PC È­¸é¿¡ ¿¡ÄÚ (Å¸ÀÌÇÎÇÑ°Å º¸ÀÌ°Ô)
+        // PC È­ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½ (Å¸ï¿½ï¿½ï¿½ï¿½ï¿½Ñ°ï¿½ ï¿½ï¿½ï¿½Ì°ï¿½)
         USART_SendData(USART1, word);
         
-        // ºí·çÅõ½º ¸ðµâ·Î Àü¼Û (AT Ä¿¸Çµå ¼³Á¤ µî)
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (AT Ä¿ï¿½Çµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½)
         USART_SendData(USART2, word);
         
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
 }
 
-// 4. USART2 (ºí·çÅõ½º -> STM32): ¸í·É ÆÄ½Ì ¹× PC·Î ¸ð´ÏÅÍ¸µ
+// 4. USART2 (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ -> STM32): ï¿½ï¿½ï¿½ ï¿½Ä½ï¿½ ï¿½ï¿½ PCï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Í¸ï¿½
 void USART2_IRQHandler(void) {
     if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) {
         uint16_t word = USART_ReceiveData(USART2);
         
-        // 1. µð¹ö±ëÀ» À§ÇØ ¹ÞÀº µ¥ÀÌÅÍ¸¦ PC(PuTTY)·Î Ãâ·Â
+        // 1. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ PC(PuTTY)ï¿½ï¿½ ï¿½ï¿½ï¿½
         USART_SendData(USART1, word); 
 
-        // 2. ¹öÆÛ¿¡ ÀúÀå ¹× ¸í·É¾î Ã³¸®
-        if (rx_index < sizeof(rx_buffer) - 1) {
-            // ÁÙ¹Ù²Þ ¹®ÀÚ³ª Ä³¸®Áö ¸®ÅÏÀ» ¸¸³ª¸é ¸í·É¾î·Î ÀÎ½Ä
-            if (word == '\n' || word == '\r') {
-                if (rx_index > 0) {
-                    rx_buffer[rx_index] = '\0'; // ¹®ÀÚ¿­ Á¾·á
+        // 2. ï¿½ï¿½ï¿½Û¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½É¾ï¿½ Ã³ï¿½ï¿½
+        if (word == '\n' || word == '\r') {
+            if (rx_index > 0) {
+                rx_buffer[rx_index] = '\0';
 
-                    // ¼ýÀÚÀÎÁö È®ÀÎÇÏ°í Å¸ÀÌ¸Ó ¼³Á¤ (¿¹: "10" ¼ö½Å ½Ã)
-                    int received_val = atoi(rx_buffer);
-                    
-                    if (received_val > 0) {
-                        // ¾Ë¶÷ ½ÃÀÛ ÇÔ¼ö È£Ãâ (alarm.c¿¡ ÀÖ´Ù°í °¡Á¤)
-                        Alarm_Start((uint16_t)received_val);
-                        
-                        // PC¿¡µµ ¼³Á¤µÇ¾ú´Ù°í ·Î±× Ãâ·Â (¼±ÅÃ»çÇ×)
-                        // char log[30];
-                        // sprintf(log, "\r\nTimer Set: %d\r\n", received_val);
-                        // for(int i=0; log[i]; i++) { USART_SendData(USART1, log[i]); while(USART_GetFlagStatus(USART1, USART_FLAG_TXE)==RESET); }
-                    }
-                    
-                    rx_index = 0; // ¹öÆÛ ÃÊ±âÈ­
+                // atoië¡œ ë³€í™˜ëœ ìˆ«ìžë¥¼ 'ì´ˆ' ë‹¨ìœ„ë¡œ ì§ì ‘ ì‚¬ìš©
+                int received_val = atoi(rx_buffer);
+
+                if (received_val > 0) {
+                    // ì´ì œ ìž…ë ¥ë°›ì€ ìˆ«ìžê°€ 10ì´ë©´ 10ì´ˆ, 60ì´ë©´ 60ì´ˆë¡œ ì„¤ì •ë©ë‹ˆë‹¤.
+                    Alarm_Start((uint16_t)received_val);
+
+                    // í™•ì¸ìš© ë¡œê·¸ (ì„ íƒ ì‚¬í•­)
+                    char log[30];
+                    sprintf(log, "\r\nTimer Set: %d Seconds\r\n", received_val);
+                    USART2_SendString(log);
                 }
-            } else {
-                // ¼ýÀÚ ¹®ÀÚ¸¸ ¹öÆÛ¿¡ ´ã±â (È¤Àº °ø¹é Á¦°Å µî ÇÊ¿ä½Ã ·ÎÁ÷ Ãß°¡)
+
+                rx_index = 0;
+            }
+        } else {
+                // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½Û¿ï¿½ ï¿½ï¿½ï¿½ (È¤ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ê¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ß°ï¿½)
                 if (word >= '0' && word <= '9') {
                     rx_buffer[rx_index++] = (char)word;
                 }
             }
         } else {
-            rx_index = 0; // ¹öÆÛ ¿À¹öÇÃ·Î¿ì ¹æÁö
+            rx_index = 0; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ã·Î¿ï¿½ ï¿½ï¿½ï¿½ï¿½
         }
         
         USART_ClearITPendingBit(USART2, USART_IT_RXNE);
