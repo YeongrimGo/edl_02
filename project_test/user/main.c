@@ -29,30 +29,26 @@ int main(void) {
     USART2_SendString("System Ready! Enter seconds to set alarm.\r\n");
 
     while (1) {
-        Alarm_Process();
+            Alarm_Process();
 
-        // 1. 알람이 울리는 중일 때 터치 센서 확인
-        if (Alarm_GetState() == STATE_ALARM_ACTIVE) {
-            // 터치 센서(PC1)가 감지되면 즉시 알람 정지 상태로 전환
-            if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
-                // 알람 정지 및 상태 업데이트 (it.c의 버튼 로직과 동일 효과)
-                *p_alarm_state = STATE_ALARM_STOPPED;
-                TIM_Cmd(TIM2, DISABLE);
+            // 터치 센서(PC1) 확인: 알람 중일 때만 작동
+            if (Alarm_GetState() == STATE_ALARM_ACTIVE) {
+                if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
+                    *p_alarm_state = STATE_ALARM_STOPPED;
+                    TIM_Cmd(TIM2, DISABLE);
+                }
             }
-        }
 
-        // 2. 알람이 정지되었을 때 소요 시간 보고
-        if (Alarm_GetState() == STATE_ALARM_STOPPED) {
-            uint32_t final_time = Alarm_GetElapsedSeconds();
-            char report[60];
+            // 결과 보고 및 리셋
+            if (Alarm_GetState() == STATE_ALARM_STOPPED) {
+                uint32_t final_time = Alarm_GetElapsedSeconds();
+                char report[60];
+                sprintf(report, "\r\n[STOP] Duration: %d sec\r\n", (int)final_time);
+                USART2_SendString(report);
 
-            // 블루투스로 최종 소요 시간 전송
-            sprintf(report, "\r\n[STOP] Alarm duration: %d seconds\r\n", (int)final_time);
-            USART2_SendString(report);
-
-            // 잠시 대기 후 시스템 초기화
-            for(int i=0; i<3000000; i++);
-            Alarm_Reset();
+                for(volatile int i=0; i<5000000; i++); // 결과 확인용 지연
+                Alarm_Reset();
+            }
         }
     }
 }

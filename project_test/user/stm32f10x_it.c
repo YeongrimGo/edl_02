@@ -50,10 +50,12 @@ void USART1_IRQHandler(void) {
     }
 }
 
+// ... 기존 헤더 생략 ...
+
 void USART2_IRQHandler(void) {
     if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) {
         uint16_t word = USART_ReceiveData(USART2);
-        USART_SendData(USART1, word);
+        USART_SendData(USART1, word); // PC 모니터링용
 
         if (rx_index < sizeof(rx_buffer) - 1) {
             if (word == '\n' || word == '\r') {
@@ -62,7 +64,7 @@ void USART2_IRQHandler(void) {
                     int received_val = atoi(rx_buffer);
 
                     if (received_val > 0) {
-                        // 숫자를 그대로 초(Second) 단위로 사용하여 알람 시작
+                        // 여기서 입력받은 숫자(received_val)가 바로 초(sec)가 됩니다.
                         Alarm_Start((uint16_t)received_val);
                     }
                     rx_index = 0;
