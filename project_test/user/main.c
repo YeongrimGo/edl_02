@@ -2,81 +2,62 @@
 #include "core_cm3.h"
 #include "misc.h"
 #include "lcd.h"
-#include "touch.h"
 #include "alarm.h"
-#include "inc/hw_config.h" 
+#include "inc/hw_config.h"
 #include <stdio.h>
 
 extern volatile AlarmState* p_alarm_state;
-static uint8_t touch_pressed = 0;
-volatile uint32_t ADC_Value[1];
 
-#define RAIN_THRESHOLD 2000
+// 안전한 문자열 전송
+void UART_Send_Safe(char* str) {
+    while(*str) {
+        while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
+        USART_SendData(USART2, *str++);
+    }
+    while(USART_GetFlagStatus(USART2, USART_FLAG_TC) == RESET);
+}
+
+void Delay_ms(uint32_t ms) {
+    for(volatile uint32_t i = 0; i < ms * 4000; i++);
+}
 
 int main(void) {
     SystemInit();
     RCC_Configure();
-    GPIO_Configure();
-    NVIC_Configure();
-    ADC_Configure();
+    GPIO_Configure(); // 여기서 터치(PC1)와 빗물(PA1) 관련 설정 완료
+    NVIC_Configure(); // 여기서 EXTI1, ADC 인터럽트 설정 완료
+    ADC_Configure();  // 여기서 Watchdog 설정 완료
     DMA_Configure();
     LCD_Init();
-    Touch_Configuration();
-    Touch_Adjust();
+
     USART1_Init();
     USART2_Init();
     Alarm_Init();
     Alarm_Reset();
 
-    USART2_SendString("System Ready! Enter seconds to set alarm.\r\n");
+    UART_Send_Safe("\r\n[BOOT] System Ready! (Interrupt Mode)\r\n");
+
+    // 이전 상태 추적용 변수
+    AlarmState last_state = STATE_IDLE;
 
     while (1) {
-                Alarm_Process();
+        // 알람 소리 재생 및 LCD 표시는 여기서 계속 수행
+        Alarm_Process();
 
-                // 알람이 울리고 있을 때
-                if (Alarm_GetState() == STATE_ALARM_ACTIVE) {
+        // 상태가 '정지'로 바뀌었을 때 (인터럽트에 의해 변경됨)
+        if (*p_alarm_state == STATE_ALARM_STOPPED && last_state != STATE_ALARM_STOPPED) {
 
-                    // 1단계: 터치 센서 확인
-                if (touch_pressed == 0) {
-                if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
+            uint32_t final_time = Alarm_GetElapsedSeconds();
+            char report[60];
+            sprintf(report, "\r\n[STOP] Mission Clear! Time: %d sec\r\n", (int)final_time);
+            UART_Send_Safe(report);
 
-                    touch_pressed = 1; // 즉시 인정
-                    UART_Send_Safe("[DEBUG] Touch Detected!\r\n");
+            // 3초 대기 후 리셋
+            Delay_ms(3000);
+            Alarm_Reset();
+            UART_Send_Safe("Reset Complete. Ready for next.\r\n");
+        }
 
-                    // 한 번 눌린 후에는 채터링(떨림) 방지를 위해 0.3초간 입력 무시
-                    Delay_ms(300);
-                    }
-                }
-
-                    // 2단계: 터치 후 빗물 센서 확인 (아날로그 방식)
-                    if (touch_pressed == 1) {
-                        // [변경됨] 디지털 핀 읽기 -> ADC 값 비교
-                        // 빗물이 묻어서 ADC 값이 임계값보다 떨어지면(또는 오르면) 감지
-                        // 만약 물 묻었을 때 감지가 안 되면 부등호를 '>'로 바꿔보세요.
-                        if (ADC_Value[0] < RAIN_THRESHOLD) {
-
-                            *p_alarm_state = STATE_ALARM_STOPPED;
-                            TIM_Cmd(TIM2, DISABLE);
-                            // 디버깅용으로 현재 ADC 값 출력해보기
-                            char debug_msg[50];
-                            sprintf(debug_msg, "Water Detected! ADC Val: %d\r\n", (int)ADC_Value[0]);
-                            USART2_SendString(debug_msg);
-                        }
-                    }
-                } else {
-                    touch_pressed = 0;
-                }
-
-                // 결과 보고 및 리셋
-                if (Alarm_GetState() == STATE_ALARM_STOPPED) {
-                    touch_pressed = 0;
-                    uint32_t final_time = Alarm_GetElapsedSeconds();
-                    char report[60];
-                    sprintf(report, "\r\n[STOP] Mission Clear! Time: %d sec\r\n", (int)final_time);
-                    UART_Send_Safe(report);
-
-                    for(volatile int i=0; i<5000000; i++);
-                    Alarm_Reset();
-                }
-            }
+        last_state = *p_alarm_state;
+    }
 }
