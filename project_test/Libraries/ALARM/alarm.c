@@ -15,34 +15,38 @@ volatile AlarmState* p_alarm_state = &alarm_state;
 
 // --- 기상나팔 멜로디 데이터 ---
 // 음계 주파수(루프 지연 값으로 근사치 조절)
-#define NOTE_G  3000
-#define NOTE_C  2250
-#define NOTE_E  1800
-#define NOTE_G2 1500
+#define NOTE_G  12000 // 기존 3000 -> 12000
+#define NOTE_C  9000  // 기존 2250 -> 9000
+#define NOTE_E  7200  // 기존 1800 -> 7200
+#define NOTE_G2 6000  // 기존 1500 -> 6000
 
-// 기상나팔 음계 구성
 uint16_t reveille_notes[] = {
     NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G,
     NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G,
     NOTE_G, NOTE_C, NOTE_G, NOTE_C, NOTE_G, NOTE_C,
     NOTE_E, NOTE_C, NOTE_G
 };
+
 // 각 음의 길이 (단위: 루프 횟수)
 uint32_t reveille_beats[] = {
-    100, 100, 100, 100, 200,
-    100, 100, 100, 100, 200,
-    50, 50, 50, 50, 50, 50,
-    100, 100, 300
+    200, 200, 200, 200, 400,
+    200, 200, 200, 200, 400,
+    100, 100, 100, 100, 100, 100,
+    200, 200, 600
 };
 
 static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
-    for (uint32_t i = 0; i < duration; i++) {
-        GPIO_SetBits(GPIOB, GPIO_Pin_0);
-        for (volatile int d = 0; d < pitch; d++);
-        GPIO_ResetBits(GPIOB, GPIO_Pin_0);
-        for (volatile int d = 0; d < pitch; d++);
+    // duration 루프 횟수만큼 파형 생성
+    // pitch 값이 클수록 딜레이가 길어져서 저음이 남
+    for (uint32_t i = 0; i < duration * 10; i++) { // 지속 시간도 조금 늘림 (*10)
 
-        // 중간에 알람이 꺼졌는지 확인 (빠른 반응성)
+        GPIO_SetBits(GPIOB, GPIO_Pin_0); // High
+        for (volatile int d = 0; d < pitch; d++); // Delay
+
+        GPIO_ResetBits(GPIOB, GPIO_Pin_0); // Low
+        for (volatile int d = 0; d < pitch; d++); // Delay
+
+        // 알람 정지 시 즉시 탈출 (반응성 향상)
         if (*p_alarm_state != STATE_ALARM_ACTIVE) return;
     }
 }
@@ -53,8 +57,11 @@ void Play_Reveille(void) {
 
     if (*p_alarm_state == STATE_ALARM_ACTIVE) {
         Buzzer_Sound(reveille_notes[note_idx], reveille_beats[note_idx]);
-        note_idx = (note_idx + 1) % num_notes; // 무한 반복
-        for (volatile int pause = 0; pause < 50000; pause++); // 음 간격
+
+        note_idx = (note_idx + 1) % num_notes;
+
+        // 음과 음 사이 짧은 간격 (Staccato 느낌)
+        for (volatile int pause = 0; pause < 100000; pause++);
     } else {
         note_idx = 0;
     }

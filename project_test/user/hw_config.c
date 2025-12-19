@@ -7,79 +7,63 @@
 #include "stm32f10x_dma.h"
 #include "misc.h"
 
-// Note: The ADC_Value is defined in main.c
 extern volatile uint32_t ADC_Value[1];
 
 void RCC_Configure(void) {
-    // ADC1, GPIOC, GPIOA, GPIOD, AFIO(리맵핑용), USART1 클럭 활성화
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
-    
-    // DMA1 클럭 활성화
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-
-    // TIM2(알람용), USART2(블루투스용) 클럭 활성화
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_USART2, ENABLE);
 }
 
 void GPIO_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // 1. ADC용 GPIO (PC0)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    // 1. ADC용 GPIO (PA1 - 빗물 센서) [변경됨]
+    // 기존 PC0 대신 PA1을 아날로그 모드로 설정
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-    // 2. 알람 정지 버튼용 GPIO (PA0)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // 풀업 입력
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-    
-    // 3. USART1 (PC 연결용: PA9 TX, PA10 RX)
-    // TX (PA9)
+
+    // 2. 알람 정지 버튼 (PA0)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    // 3. USART1 (PA9 TX, PA10 RX)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-    // RX (PA10)
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 4. USART2 (블루투스용: PD5 TX, PD6 RX - 리맵핑)
-    GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE); // 리맵핑 활성화
-    
-    // TX (PD5)
+    // 4. USART2 (PD5 TX, PD6 RX)
+    GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE);
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
-    
-    // RX (PD6)
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
-    
-    // 5. 부저용 GPIO (PB0) 추가
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); // GPIOB 클럭 활성화
+
+    // 5. 부저용 GPIO (PB0)
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // 출력 모드
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
-    // 초기 상태: OFF (Low Active이므로 High를 출력하여 끔)
-    GPIO_SetBits(GPIOB, GPIO_Pin_0);
+    GPIO_SetBits(GPIOB, GPIO_Pin_0); // 초기 상태 OFF
 
-    // 6. 빗물 감지 센서용 GPIO (PA1) 추가
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; // 빗물 센서 출력 타입에 따라 IPU 또는 IN_FLOATING
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    // 터치센서용 GPIO (PC1) 설정
+    // 6. 터치센서용 GPIO (PC1)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD; // 또는 모듈에 따라 IPU/IN_FLOATING
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD; // 또는 IPU (센서 모듈에 맞게)
     GPIO_Init(GPIOC, &GPIO_InitStructure);
-    
-
 }
 
 void USART1_Init(void) {
@@ -172,7 +156,6 @@ void DMA_Configure(void) {
    DMA_Init(DMA1_Channel1, &DMA_InitStruct);
    DMA_Cmd(DMA1_Channel1, ENABLE);
 }
-
 void ADC_Configure(void) {
    ADC_InitTypeDef ADC_InitStruct;
    ADC_InitStruct.ADC_Mode = ADC_Mode_Independent;
@@ -182,7 +165,10 @@ void ADC_Configure(void) {
    ADC_InitStruct.ADC_DataAlign = ADC_DataAlign_Right;
    ADC_InitStruct.ADC_NbrOfChannel = 1;
    ADC_Init(ADC1, &ADC_InitStruct);
-   ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_28Cycles5);
+
+   // [중요 변경] ADC Channel 10(PC0) -> ADC Channel 1(PA1)로 변경
+   ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 1, ADC_SampleTime_28Cycles5);
+
    ADC_Cmd(ADC1, ENABLE);
    ADC_ResetCalibration(ADC1);
    while (ADC_GetResetCalibrationStatus(ADC1));
