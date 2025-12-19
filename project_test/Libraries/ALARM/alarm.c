@@ -7,39 +7,24 @@
 #include "misc.h"
 #include <stdio.h>
 
-// This file's internal variables
+// 내부 변수
 static volatile AlarmState alarm_state = STATE_IDLE;
 static volatile uint32_t countdown_seconds = 0;
 static volatile uint32_t elapsed_seconds = 0;
 
-// Public global variables for access from ISRs in other files
-volatile uint32_t* p_countdown_seconds = &countdown_seconds;#include "alarm.h"
-#include "lcd.h"
-#include "stm32f10x_rcc.h"
-#include "stm32f10x_gpio.h"
-#include "stm32f10x_tim.h"
-#include "stm32f10x_exti.h"
-#include "misc.h"
-#include <stdio.h>
-
-// This file's internal variables
-static volatile AlarmState alarm_state = STATE_IDLE;
-static volatile uint32_t countdown_seconds = 0;
-static volatile uint32_t elapsed_seconds = 0;
-
-// Public global variables for access from ISRs in other files
+// 외부 공유 변수
 volatile uint32_t* p_countdown_seconds = &countdown_seconds;
 volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
 volatile AlarmState* p_alarm_state = &alarm_state;
 
-// Internal function prototypes
+// 내부 함수 프로토타입
 static void TIM_Configure_Alarm(void);
 
-// --- Configuration Functions ---
+// --- 설정 함수 ---
 
 static void TIM_Configure_Alarm(void) {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-    // 1-second interrupt setup
+    // 1초 인터럽트 설정 (SystemClock이 72MHz라고 가정)
     TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1;
     TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
@@ -48,28 +33,31 @@ static void TIM_Configure_Alarm(void) {
     TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
 }
 
-// --- Public Functions ---
+// --- 공용 함수 ---
 
 void Alarm_Init(void) {
     TIM_Configure_Alarm();
-    
-    // [추가] 초기화 시 부저가 울리지 않도록 확실히 끔
+    // 초기화 시 부저 끄기
     GPIO_ResetBits(GPIOB, GPIO_Pin_11);
 }
 
-void Alarm_Start(uint16_t minutes) {
-    if (minutes > 0) {
-        *p_countdown_seconds = minutes * 60; // 초 단위로 변환
+// [수정됨] 입력받은 값을 '초(Seconds)' 단위로 바로 사용합니다.
+// 예: 60을 입력하면 60초, 10을 입력하면 10초
+void Alarm_Start(uint16_t seconds) {
+    if (seconds > 0) {
+        // [중요 수정] 곱하기 60을 제거했습니다. 받은 값 그대로 카운트다운 변수에 넣습니다.
+        *p_countdown_seconds = seconds; 
+        
         *p_alarm_state = STATE_COUNTDOWN;
         *p_elapsed_seconds = 0;
         
-        // [추가] 시작할 때도 부저는 꺼둠
+        // 시작 시 부저 끄기
         GPIO_ResetBits(GPIOB, GPIO_Pin_11);
         
         LCD_Clear(WHITE);
         LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
         
-        // Start timer
+        // 타이머 시작
         TIM_Cmd(TIM2, ENABLE);
     }
 }
@@ -85,7 +73,7 @@ void Alarm_Process(void) {
                 uint16_t rem_minutes = remaining_total_seconds / 60;
                 uint16_t rem_seconds = remaining_total_seconds % 60;
 
-                // Update screen every second to show countdown
+                // 1초마다 화면 갱신
                 if (last_displayed_second != rem_seconds) {
                     last_displayed_second = rem_seconds;
                     sprintf(lcd_buffer, "Time: %02d min %02d sec", rem_minutes, rem_seconds);
@@ -95,11 +83,11 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_ACTIVE:
-            // [중요 수정] 알람 상태가 되면 부저(PB11)를 켠다!
+            // 알람 울림 상태: 부저 켜기 (PB11 High)
             GPIO_SetBits(GPIOB, GPIO_Pin_11);
 
-            // Change screen only once when alarm starts ringing
-            if (*p_elapsed_seconds == 1) { // 1초 정도 지났을 때 화면 갱신
+            // 화면 갱신 (한 번만)
+            if (*p_elapsed_seconds == 1) { 
                 LCD_Clear(RED);
                 LCD_ShowString(40, 100, (u8*)"WAKE UP!", WHITE, RED);
             }
@@ -107,7 +95,7 @@ void Alarm_Process(void) {
 
         case STATE_ALARM_STOPPED:
             {
-                // [중요 수정] 알람이 멈추면 부저도 끈다
+                // 알람 정지 상태: 부저 끄기 (PB11 Low)
                 GPIO_ResetBits(GPIOB, GPIO_Pin_11);
 
                 uint16_t minutes = *p_elapsed_seconds / 60;
@@ -115,20 +103,18 @@ void Alarm_Process(void) {
                 LCD_Clear(WHITE);
                 sprintf(lcd_buffer, "Elapsed: %d min %d sec", minutes, seconds);
                 LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
-                
-                // State reset is handled by the main loop
+                // 상태 리셋은 main 루프에서 처리
             }
             break;
 
         case STATE_IDLE:
-            // No special action in idle state
-            // 혹시 모르니 꺼둠
+            // 대기 상태: 부저 끄기
             GPIO_ResetBits(GPIOB, GPIO_Pin_11);
             break;
     }
 }
 
-// --- External Getter/Setter Functions ---
+// --- Getter/Setter Functions ---
 
 AlarmState Alarm_GetState(void) {
     return *p_alarm_state;
@@ -143,120 +129,13 @@ void Alarm_Reset(void) {
     *p_elapsed_seconds = 0;
     *p_countdown_seconds = 0;
     
-    // [중요 수정] 리셋 시 부저 끄기 (PB11 Low)
+    // 리셋 시 부저 끄기
     GPIO_ResetBits(GPIOB, GPIO_Pin_11);
     
-    // Stop the timer if it was running
+    // 타이머 정지
     TIM_Cmd(TIM2, DISABLE);
 
-    // Optionally, clear the screen for the next alarm
-    LCD_Clear(WHITE);
-    LCD_ShowString(40, 100, (u8*)"Alarm Idle", BLUE, WHITE);
-}
-volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
-volatile AlarmState* p_alarm_state = &alarm_state;
-
-// Internal function prototypes
-static void TIM_Configure_Alarm(void);
-
-// --- Configuration Functions ---
-
-// Simplified to only configure the timer, assuming RCC and GPIO are handled in main hardware config.
-static void TIM_Configure_Alarm(void) {
-    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-    // 1-second interrupt setup
-    TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1;
-    TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
-    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
-    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-    TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
-}
-
-// --- Public Functions ---
-
-void Alarm_Init(void) {
-    TIM_Configure_Alarm();
-}
-
-void Alarm_Start(uint16_t minutes) {
-    if (minutes > 0) {
-        *p_countdown_seconds = minutes * 60;
-        *p_alarm_state = STATE_COUNTDOWN;
-        *p_elapsed_seconds = 0;
-        
-        LCD_Clear(WHITE);
-        LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
-        
-        // Start timer
-        TIM_Cmd(TIM2, ENABLE);
-    }
-}
-
-void Alarm_Process(void) {
-    char lcd_buffer[30];
-    static int32_t last_displayed_second = -1;
-
-    switch (*p_alarm_state) {
-        case STATE_COUNTDOWN:
-            {
-                uint32_t remaining_total_seconds = *p_countdown_seconds;
-                uint16_t rem_minutes = remaining_total_seconds / 60;
-                uint16_t rem_seconds = remaining_total_seconds % 60;
-
-                // Update screen every second to show countdown
-                if (last_displayed_second != rem_seconds) {
-                    last_displayed_second = rem_seconds;
-                    sprintf(lcd_buffer, "Time: %02d min %02d sec", rem_minutes, rem_seconds);
-                    LCD_ShowString(40, 130, (u8*)lcd_buffer, BLUE, WHITE);
-                }
-            }
-            break;
-
-        case STATE_ALARM_ACTIVE:
-            // Change screen only once when alarm starts ringing
-            if (*p_elapsed_seconds == 1) {
-                LCD_Clear(RED);
-                LCD_ShowString(40, 100, (u8*)"WAKE UP!", WHITE, RED);
-            }
-            break;
-
-        case STATE_ALARM_STOPPED:
-            {
-                uint16_t minutes = *p_elapsed_seconds / 60;
-                uint16_t seconds = *p_elapsed_seconds % 60;
-                LCD_Clear(WHITE);
-                sprintf(lcd_buffer, "Elapsed: %d min %d sec", minutes, seconds);
-                LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
-                // State reset is handled by the main loop
-            }
-            break;
-
-        case STATE_IDLE:
-            // No special action in idle state
-            break;
-    }
-}
-
-// --- External Getter/Setter Functions ---
-
-AlarmState Alarm_GetState(void) {
-    return *p_alarm_state;
-}
-
-uint32_t Alarm_GetElapsedSeconds(void) {
-    return *p_elapsed_seconds;
-}
-
-void Alarm_Reset(void) {
-    *p_alarm_state = STATE_IDLE;
-    *p_elapsed_seconds = 0;
-    *p_countdown_seconds = 0;
-    
-    // Stop the timer if it was running
-    TIM_Cmd(TIM2, DISABLE);
-
-    // Optionally, clear the screen for the next alarm
+    // 화면 초기화
     LCD_Clear(WHITE);
     LCD_ShowString(40, 100, (u8*)"Alarm Idle", BLUE, WHITE);
 }
