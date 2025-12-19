@@ -5,11 +5,15 @@
 
 void RCC_Configure(void);
 void GPIO_Configure(void);
-void NVIC_Configure(void);
 void USART1_Init(void);
 void USART2_Init(void);
-void USART2_SendString(const char* str);
-void DMA_Configure(void);
+void NVIC_Configure(void);
 void ADC_Configure(void);
+void DMA_Configure(void);
 
-#endif /* __HW_CONFIG_H */
+// 부저 제어 함수 (Low Trigger)
+void BUZZER_On(void);
+void BUZZER_Off(void);
+void USART2_SendString(const char* str);
+
+#endif
