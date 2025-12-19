@@ -11,12 +11,11 @@ extern volatile AlarmState* p_alarm_state;
 
 volatile uint32_t ADC_Value[1];
 
-// main.c
-
 int main(void) {
     SystemInit();
     RCC_Configure();
     GPIO_Configure();
+    Ultrasonic_Configure(); // [추가됨] 초음파 센서 초기화
     NVIC_Configure();
     ADC_Configure();
     DMA_Configure();
