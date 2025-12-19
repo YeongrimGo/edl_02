@@ -125,7 +125,7 @@ void Alarm_Process(void) {
                 sprintf(lcd_buffer, "Rain: %04d", rain_val);
                 LCD_ShowString(40, 150, (u8*)lcd_buffer, BLACK, YELLOW);
 
-                if (stability_count < 100000) stability_count++;
+                if (stability_count < 10) stability_count++;
                 else {
                     if (rain_val < 2000) {
                         *p_alarm_state = STATE_ALARM_STOPPED;
