@@ -11,7 +11,7 @@ void NVIC_Configure(void);
 void ADC_Configure(void);
 void DMA_Configure(void);
 
-// 부저 제어 함수 (Low Trigger)
+// 부저 제어 함수 (PA8, Low Trigger)
 void BUZZER_On(void);
 void BUZZER_Off(void);
 void USART2_SendString(const char* str);

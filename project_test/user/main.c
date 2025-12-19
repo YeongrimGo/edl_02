@@ -9,20 +9,16 @@ volatile uint32_t ADC_Value[1];
 
 int main(void) {
     SystemInit();
-    
     RCC_Configure();
     GPIO_Configure();
     NVIC_Configure();
-    
     ADC_Configure();
     DMA_Configure();
     LCD_Init();
     Touch_Configuration();
     Touch_Adjust();
-    
     USART1_Init(); 
     USART2_Init(); 
-    
     Alarm_Init();
     Alarm_Reset(); 
 
@@ -30,14 +26,12 @@ int main(void) {
 
     while (1) {
         Alarm_Process();
-
         if (Alarm_GetState() == STATE_ALARM_STOPPED) {
             uint32_t final_elapsed_seconds = Alarm_GetElapsedSeconds();
             char msg[50];
             sprintf(msg, "Time: %d secs\r\n", (int)final_elapsed_seconds);
             USART2_SendString(msg);
-
-            for(int i=0; i<5000000; i++); 
+            for(volatile int i=0; i<5000000; i++); 
             Alarm_Reset();
         }
     }
