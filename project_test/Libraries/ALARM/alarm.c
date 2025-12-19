@@ -134,7 +134,8 @@ void Alarm_Process(void) {
                 sprintf(lcd_buffer, "Rain ADC: %04d", rain_val);
                 LCD_ShowString(40, 150, (u8*)lcd_buffer, BLACK, YELLOW);
 
-                if (stability_count < 100000) {
+                // [안정화 딜레이]
+                if (stability_count < 10) {
                     stability_count++;
                 }
                 else {
