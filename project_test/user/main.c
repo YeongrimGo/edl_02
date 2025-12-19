@@ -37,12 +37,16 @@ int main(void) {
                 if (Alarm_GetState() == STATE_ALARM_ACTIVE) {
 
                     // 1단계: 터치 센서 확인
-                    if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
-                        if (touch_pressed == 0) {
-                            touch_pressed = 1;
-                            USART2_SendString("Touch detected! Now use water sensor.\r\n");
-                        }
+                if (touch_pressed == 0) {
+                if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1) == Bit_SET) {
+
+                    touch_pressed = 1; // 즉시 인정
+                    UART_Send_Safe("[DEBUG] Touch Detected!\r\n");
+
+                    // 한 번 눌린 후에는 채터링(떨림) 방지를 위해 0.3초간 입력 무시
+                    Delay_ms(300);
                     }
+                }
 
                     // 2단계: 터치 후 빗물 센서 확인 (아날로그 방식)
                     if (touch_pressed == 1) {
@@ -53,8 +57,6 @@ int main(void) {
 
                             *p_alarm_state = STATE_ALARM_STOPPED;
                             TIM_Cmd(TIM2, DISABLE);
-                            touch_pressed = 0;
-
                             // 디버깅용으로 현재 ADC 값 출력해보기
                             char debug_msg[50];
                             sprintf(debug_msg, "Water Detected! ADC Val: %d\r\n", (int)ADC_Value[0]);
@@ -67,10 +69,11 @@ int main(void) {
 
                 // 결과 보고 및 리셋
                 if (Alarm_GetState() == STATE_ALARM_STOPPED) {
+                    touch_pressed = 0;
                     uint32_t final_time = Alarm_GetElapsedSeconds();
                     char report[60];
                     sprintf(report, "\r\n[STOP] Mission Clear! Time: %d sec\r\n", (int)final_time);
-                    USART2_SendString(report);
+                    UART_Send_Safe(report);
 
                     for(volatile int i=0; i<5000000; i++);
                     Alarm_Reset();
