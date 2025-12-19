@@ -12,7 +12,11 @@ static volatile AlarmState alarm_state = STATE_IDLE;
 static volatile uint32_t countdown_seconds = 0;
 static volatile uint32_t elapsed_seconds = 0;
 
+<<<<<<< HEAD
 // 외부 공유 변수
+=======
+// Public global variables for access from ISRs in other files
+>>>>>>> 0e9a880c116b26903f755b24afa3e5d344d36697
 volatile uint32_t* p_countdown_seconds = &countdown_seconds;
 volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
 volatile AlarmState* p_alarm_state = &alarm_state;
