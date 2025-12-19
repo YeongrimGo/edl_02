@@ -1,136 +1,142 @@
 ###############################################################################
 #
-# IAR ANSI C/C++ Compiler V8.22.1.15669/W32 for ARM       09/Dec/2025  19:52:39
+# IAR ANSI C/C++ Compiler V8.22.1.15669/W32 for ARM       19/Dec/2025  16:32:34
 # Copyright 1999-2018 IAR Systems AB.
 #
 #    Cpu mode     =  thumb
 #    Endian       =  little
-#    Source file  =  C:\project_test\user\main.c
+#    Source file  =  C:\tue_team2\edl_02\project_test\user\main.c
 #    Command line =  
-#        -f C:\Users\pnu2\AppData\Local\Temp\EW677E.tmp
-#        (C:\project_test\user\main.c -D USE_STDPERIPH_DRIVER -D STM32F10X_CL
-#        -lC C:\project_test\Debug\List -o C:\project_test\Debug\Obj --no_cse
-#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
-#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
-#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        -f C:\Users\pnu2\AppData\Local\Temp\EW3F77.tmp
+#        (C:\tue_team2\edl_02\project_test\user\main.c -D USE_STDPERIPH_DRIVER
+#        -D STM32F10X_CL -lC C:\tue_team2\edl_02\project_test\Debug\List -o
+#        C:\tue_team2\edl_02\project_test\Debug\Obj --no_cse --no_unroll
+#        --no_inline --no_code_motion --no_tbaa --no_clustering --no_scheduling
+#        --debug --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
 #        8.0\arm\INC\c\DLib_Config_Normal.h" -I
-#        C:\project_test\libraries\CMSIS\DeviceSupport\ -I
-#        C:\project_test\libraries\CMSIS\DeviceSupport\Startup\ -I
-#        C:\project_test\libraries\STM32F10x_StdPeriph_Driver_v3.5\inc\ -I
-#        C:\project_test\libraries\STM32F10x_StdPeriph_Driver_v3.5\src\ -I
-#        C:\project_test\user\ -I C:\project_test\user\inc\ -I
-#        C:\project_test\Libraries\LCD\ -I C:\project_test\ -I
-#        C:\project_test\Libraries\ALARM\ -Ol -I "C:\Program Files (x86)\IAR
-#        Systems\Embedded Workbench 8.0\arm\CMSIS\Core\Include\" -I "C:\Program
+#        C:\tue_team2\edl_02\project_test\libraries\CMSIS\DeviceSupport\ -I
+#        C:\tue_team2\edl_02\project_test\libraries\CMSIS\DeviceSupport\Startup\
+#        -I
+#        C:\tue_team2\edl_02\project_test\libraries\STM32F10x_StdPeriph_Driver_v3.5\inc\
+#        -I
+#        C:\tue_team2\edl_02\project_test\libraries\STM32F10x_StdPeriph_Driver_v3.5\src\
+#        -I C:\tue_team2\edl_02\project_test\user\ -I
+#        C:\tue_team2\edl_02\project_test\user\inc\ -I
+#        C:\tue_team2\edl_02\project_test\Libraries\LCD\ -I
+#        C:\tue_team2\edl_02\project_test\ -I
+#        C:\tue_team2\edl_02\project_test\Libraries\ALARM\ -Ol -I "C:\Program
 #        Files (x86)\IAR Systems\Embedded Workbench
-#        8.0\arm\CMSIS\DSP\Include\")
+#        8.0\arm\CMSIS\Core\Include\" -I "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 8.0\arm\CMSIS\DSP\Include\")
 #    Locale       =  C
-#    List file    =  C:\project_test\Debug\List\main.lst
-#    Object file  =  C:\project_test\Debug\Obj\main.o
+#    List file    =  C:\tue_team2\edl_02\project_test\Debug\List\main.lst
+#    Object file  =  C:\tue_team2\edl_02\project_test\Debug\Obj\main.o
 #
 ###############################################################################
 
-C:\project_test\user\main.c
-      1          #include "stm32f10x.h"
-      2          #include "core_cm3.h"
-      3          #include "misc.h"
-      4          #include "lcd.h"
-      5          #include "touch.h"
-      6          #include "alarm.h"
-      7          #include "inc/hw_config.h" 
-      8          #include <stdio.h>
-      9          
-     10          // --- Global variables ---
+C:\tue_team2\edl_02\project_test\user\main.c
+      1          // main.c
+      2          #include "stm32f10x.h"
+      3          #include "core_cm3.h"
+      4          #include "misc.h"
+      5          #include "lcd.h"
+      6          #include "touch.h"
+      7          #include "alarm.h"
+      8          #include "inc/hw_config.h" 
+      9          #include <stdio.h>
+     10          
+     11          // --- Global variables ---
 
    \                                 In section .bss, align 4
-     11          volatile uint32_t ADC_Value[1];
+     12          volatile uint32_t ADC_Value[1];
    \                     ADC_Value:
    \   00000000                      DS8 4
-     12          
-     13          // @@@@@ @@ (hw_config.c@ @@@)
-     14          void USART1_Init(void); 
-     15          
+     13          
+     14          // ?@@?@????@@ (hw_config.c???@@??
+     15          void USART1_Init(void); 
+     16          
 
    \                                 In section .text, align 4, keep-with-next
-     16          int main(void) {
+     17          int main(void) {
    \                     main: (+1)
    \   00000000   0xB500             PUSH     {LR}
    \   00000002   0xB08D             SUB      SP,SP,#+52
-     17              SystemInit();
+     18              SystemInit();
    \   00000004   0x.... 0x....      BL       SystemInit
-     18              
-     19              // 1. @@@@ @@
-     20              RCC_Configure();
+     19              
+     20              // 1. ?@@?@@ ?@@
+     21              RCC_Configure();
    \   00000008   0x.... 0x....      BL       RCC_Configure
-     21              GPIO_Configure();
+     22              GPIO_Configure();
    \   0000000C   0x.... 0x....      BL       GPIO_Configure
-     22              NVIC_Configure();
+     23              NVIC_Configure();
    \   00000010   0x.... 0x....      BL       NVIC_Configure
-     23              
-     24              // 2. @@@@ @@@
-     25              ADC_Configure();
+     24              
+     25              // 2. @@?@@@ @@@?
+     26              ADC_Configure();
    \   00000014   0x.... 0x....      BL       ADC_Configure
-     26              DMA_Configure();
+     27              DMA_Configure();
    \   00000018   0x.... 0x....      BL       DMA_Configure
-     27              LCD_Init();
+     28              LCD_Init();
    \   0000001C   0x.... 0x....      BL       LCD_Init
-     28              Touch_Configuration();
+     29              Touch_Configuration();
    \   00000020   0x.... 0x....      BL       Touch_Configuration
-     29              Touch_Adjust();
+     30              Touch_Adjust();
    \   00000024   0x.... 0x....      BL       Touch_Adjust
-     30              
-     31              USART1_Init(); // PC(PuTTY) @@@
+     31              
+     32              USART1_Init(); // PC(PuTTY) ?@@?
    \   00000028   0x.... 0x....      BL       USART1_Init
-     32              USART2_Init(); // @@@@ @@@
+     33              USART2_Init(); // @@@?@@ ?@@?
    \   0000002C   0x.... 0x....      BL       USART2_Init
-     33              
-     34              Alarm_Init();
+     34              
+     35              Alarm_Init();
    \   00000030   0x.... 0x....      BL       Alarm_Init
-     35              Alarm_Reset();
+     36              Alarm_Reset();
    \   00000034   0x.... 0x....      BL       Alarm_Reset
-     36          
-     37              // @@ @@@@ PC@ @@@@@ @@ (@@@)
-     38              USART2_SendString("System Ready!\r\n");
+     37          
+     38              // @€??@@@@€@?PC?€ @@@?@@@??@@ (?@@??
+     39              USART2_SendString("System Ready!\r\n");
    \   00000038   0x480A             LDR.N    R0,??main_0
    \   0000003A   0x.... 0x....      BL       USART2_SendString
-     39          
-     40              while (1) {
-     41                  // @@ @@ @@ @@ (LCD @@@@, @@ @@ @)
-     42                  Alarm_Process();
+     40          
+     41              while (1) {
+     42                  // ?@@ ?@@ @@@ ?@@ (LCD ?@@?@@, @€?€ ?@@ ??
+     43                  Alarm_Process();
    \                     ??main_1: (+1)
    \   0000003E   0x.... 0x....      BL       Alarm_Process
-     43          
-     44                  // 3. @@@ @@@@ @@ @@@@@@ @@
-     45                  if (Alarm_GetState() == STATE_ALARM_STOPPED) {
+     44          
+     45                  // 3. ?@@???@@?@@ ?@@ ?@??@@?@? ?@@
+     46                  if (Alarm_GetState() == STATE_ALARM_STOPPED) {
    \   00000042   0x.... 0x....      BL       Alarm_GetState
    \   00000046   0x2803             CMP      R0,#+3
    \   00000048   0xD1F9             BNE.N    ??main_1
-     46                      uint32_t final_elapsed_seconds = Alarm_GetElapsedSeconds();
+     47                      uint32_t final_elapsed_seconds = Alarm_GetElapsedSeconds();
    \   0000004A   0x.... 0x....      BL       Alarm_GetElapsedSeconds
-     47                      char msg[50];
-     48                      
-     49                      // @@ @@@ @@@@ @@ (@: "Time: 5 secs\r\n")
-     50                      sprintf(msg, "Time: %d secs\r\n", final_elapsed_seconds);
+     48                      char msg[50];
+     49                      
+     50                      // @@@ ?@@??@@@?@@ @€??(?? "Time: 5 secs\r\n")
+     51                      sprintf(msg, "Time: %d secs\r\n", final_elapsed_seconds);
    \   0000004E   0x0002             MOVS     R2,R0
    \   00000050   0x4905             LDR.N    R1,??main_0+0x4
    \   00000052   0x4668             MOV      R0,SP
    \   00000054   0x.... 0x....      BL       sprintf
-     51                      
-     52                      // *** @@: @@@@ @@(USART2)@ @@ ***
-     53                      USART2_SendString(msg);
+     52                      
+     53                      // *** @@@: @@@?@@ @@@(USART2)@??@@ ***
+     54                      USART2_SendString(msg);
    \   00000058   0x4668             MOV      R0,SP
    \   0000005A   0x.... 0x....      BL       USART2_SendString
-     54          
-     55                      // @@@ IDLE@ @@@@ @@ @@ @@
-     56                      Alarm_Reset();
+     55          
+     56                      // ?@@@?IDLE@?@@@?@@ ?@@ @@@ ?€@
+     57                      Alarm_Reset();
    \   0000005E   0x.... 0x....      BL       Alarm_Reset
    \   00000062   0xE7EC             B.N      ??main_1
    \                     ??main_0:
    \   00000064   0x........         DC32     ?_0
    \   00000068   0x........         DC32     ?_1
-     57                  }
-     58              }
-     59          }
+     58                  }
+     59              }
+     60          }
 
    \                                 In section .rodata, align 4
    \                     ?_0:
