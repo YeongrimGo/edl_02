@@ -200,9 +200,10 @@ void ADC_Configure(void) {
    // 그러므로 "젖었을 때(<2000)" 감지하려면, 안전 범위를 "2000 ~ 4095"로 설정해야 함.
    // 값이 2000 밑으로 떨어지면 범위 밖이므로 인터럽트 발생.
 
-   ADC_AnalogWatchdogThresholdsConfig(ADC1, 0xFFF, 2000); // High=4095, Low=2000
+   ADC_AnalogWatchdogThresholdsConfig(ADC1, 0xFFF, 1000); // High=4095, Low=2000
    ADC_AnalogWatchdogSingleChannelConfig(ADC1, ADC_Channel_1); // PA1 감시
    ADC_AnalogWatchdogCmd(ADC1, ADC_AnalogWatchdog_SingleRegEnable);
+
 
    // 초기에는 ADC 인터럽트 비활성화 (터치 후에 켤 것임)
    ADC_ITConfig(ADC1, ADC_IT_AWD, DISABLE);
