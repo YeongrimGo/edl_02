@@ -20,9 +20,9 @@ void GPIO_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
     // 1. ADC용 GPIO (PA1)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIOD, &GPIO_InitStructure);
 
     // 2. 알람 정지 버튼 (PA0)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
