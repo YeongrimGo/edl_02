@@ -140,7 +140,7 @@ void Alarm_Process(void) {
                 LCD_ShowString(40, 150, (u8*)lcd_buffer, BLACK, YELLOW);
 
                 // [안정화 딜레이]
-                if (stability_count < 100000) {
+                if (stability_count < 10) {
                     stability_count++;
                 }
                 else {
