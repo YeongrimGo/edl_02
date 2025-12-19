@@ -13,6 +13,16 @@ extern volatile AlarmState* p_alarm_state;
 static char rx_buffer[50];
 static uint8_t rx_index = 0;
 
+void NMI_Handler(void) {}
+void HardFault_Handler(void) { while (1) {} }
+void MemManage_Handler(void) { while (1) {} }
+void BusFault_Handler(void) { while (1) {} }
+void UsageFault_Handler(void) { while (1) {} }
+void SVC_Handler(void) {}
+void DebugMon_Handler(void) {}
+void PendSV_Handler(void) {}
+void SysTick_Handler(void) {}
+
 void TIM2_IRQHandler(void) {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
@@ -20,7 +30,7 @@ void TIM2_IRQHandler(void) {
             if (*p_countdown_seconds > 0) (*p_countdown_seconds)--;
             if (*p_countdown_seconds == 0) {
                 *p_alarm_state = STATE_ALARM_ACTIVE;
-                BUZZER_On(); 
+                BUZZER_On(); // 카운트다운 완료 시 부저 On
             }
         } else if (*p_alarm_state == STATE_ALARM_ACTIVE) {
             (*p_elapsed_seconds)++;
@@ -32,30 +42,27 @@ void EXTI0_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line0) != RESET) {
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {
             *p_alarm_state = STATE_ALARM_STOPPED;
-            BUZZER_Off();
+            BUZZER_Off(); // 버튼 누르면 부저 Off
             TIM_Cmd(TIM2, DISABLE);
         }
-        EXTI_ClearITPendingBit(EXTI_Line0);
+        EXTI0_ClearITPendingBit(EXTI_Line0);
     }
 }
 
 void USART1_IRQHandler(void) {
     if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
         uint16_t word = USART_ReceiveData(USART1);
-        while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET); // 전송 대기
-        USART_SendData(USART2, word);
+        USART_SendData(USART1, word);
+        USART_SendData(USART2, word); // PC에서 보낸 걸 블루투스로 전달
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
 }
 
 void USART2_IRQHandler(void) {
-    if (USART_GetFlagStatus(USART2, USART_FLAG_ORE) != RESET) { // Overrun 에러 방지
-        USART_ReceiveData(USART2);
-    }
     if (USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) {
         uint16_t word = USART_ReceiveData(USART2);
-        while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET); // 전송 대기
-        USART_SendData(USART1, word);
+        USART_SendData(USART1, word); // 블루투스에서 받은 걸 PC로 전달
+
         if (rx_index < 49) {
             if (word == '\n' || word == '\r') {
                 if (rx_index > 0) {

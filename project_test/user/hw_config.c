@@ -10,33 +10,38 @@
 extern volatile uint32_t ADC_Value[1];
 
 void RCC_Configure(void) {
-    // APB2 클럭: GPIOA, GPIOC, GPIOD, AFIO(리맵핑 필수), USART1, ADC1
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC | 
-                           RCC_APB2Periph_GPIOD | RCC_APB2Periph_AFIO | 
-                           RCC_APB2Periph_USART1 | RCC_APB2Periph_ADC1, ENABLE);
+    // APB2: ADC1, GPIOC, GPIOA, GPIOD, AFIO(리맵핑), USART1
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | 
+                           RCC_APB2Periph_GPIOD | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
     
+    // AHB: DMA1
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-    
-    // APB1 클럭: USART2(블루투스), TIM2(알람 타이머)
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_TIM2, ENABLE);
+
+    // APB1: TIM2(알람), USART2(블루투스)
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_USART2, ENABLE);
 }
 
 void GPIO_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // 1. 부저 (PA8) - 능동 부저 Low Trigger
+    // 1. ADC (PC0)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+    // 2. 부저 (PA8) - 능동 부저 Low Trigger
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_SetBits(GPIOA, GPIO_Pin_8); // 초기 상태: 꺼짐(High)
+    GPIO_SetBits(GPIOA, GPIO_Pin_8); // 초기 상태: High (소리 꺼짐)
 
-    // 2. 알람 중지 버튼 (PA0)
+    // 3. 버튼 (PA0) - 알람 정지용
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; 
     GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    // 3. USART1 (PA9:TX, PA10:RX) - PC 통신용
+    
+    // 4. USART1 (PC 연결: PA9 TX, PA10 RX)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
@@ -44,25 +49,21 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 4. USART2 리맵핑 및 설정 (PD5:TX, PD6:RX) - 블루투스용
-    GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE); // PD5, PD6 사용을 위한 리맵핑
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5; // TX
+    // 5. USART2 (블루투스 리맵핑: PD5 TX, PD6 RX)
+    GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE); 
+    
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
     
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; // RX
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
-
-    // 5. ADC (PC0)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
-void BUZZER_On(void) { GPIO_ResetBits(GPIOA, GPIO_Pin_8); }  // Low 출력 -> 소리 남
-void BUZZER_Off(void) { GPIO_SetBits(GPIOA, GPIO_Pin_8); }   // High 출력 -> 소리 꺼짐
+// 부저 제어 로직 (Low일 때 소리 남)
+void BUZZER_On(void) { GPIO_ResetBits(GPIOA, GPIO_Pin_8); }
+void BUZZER_Off(void) { GPIO_SetBits(GPIOA, GPIO_Pin_8); }
 
 void USART1_Init(void) {
     USART_InitTypeDef USART_InitStructure;
@@ -90,49 +91,44 @@ void USART2_Init(void) {
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 }
 
-void USART2_SendString(const char* str) {
-    while (*str) {
-        while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-        USART_SendData(USART2, *str++);
-    }
-}
-
 void NVIC_Configure(void) {
     NVIC_InitTypeDef NVIC_InitStructure;
     EXTI_InitTypeDef EXTI_InitStructure;
+
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
-    // TIM2 (알람)
+    // TIM2 (알람 타이머)
     NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // EXTI0 (버튼)
+    // EXTI0 (버튼 PA0)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource0);
     EXTI_InitStructure.EXTI_Line = EXTI_Line0;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
+
     NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
     NVIC_Init(&NVIC_InitStructure);
 
-    // USART1 (PC)
+    // USART1
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
 
-    // USART2 (Bluetooth)
+    // USART2
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
     NVIC_Init(&NVIC_InitStructure);
 }
 
-// DMA/ADC 설정은 기존 유지
 void DMA_Configure(void) {
    DMA_InitTypeDef DMA_InitStruct;
    DMA_InitStruct.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;
@@ -167,4 +163,11 @@ void ADC_Configure(void) {
    while (ADC_GetCalibrationStatus(ADC1));
    ADC_SoftwareStartConvCmd(ADC1, ENABLE);
    ADC_DMACmd(ADC1, ENABLE);
+}
+
+void USART2_SendString(const char* str) {
+    while (*str) {
+        USART_SendData(USART2, *str++);
+        while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
+    }
 }
