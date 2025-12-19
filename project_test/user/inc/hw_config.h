@@ -13,7 +13,7 @@ void NVIC_Configure(void);
 void ADC_Configure(void);
 void DMA_Configure(void);
 
-// [이게 없어서 에러가 났던 것입니다]
+// [중요] 이 선언들이 있어야 main.c에서 에러가 안 납니다.
 void USART1_Init(void);
 void USART2_Init(void);
 

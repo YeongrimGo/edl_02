@@ -5,7 +5,8 @@ volatile uint32_t ADC_Value[1];
 #define RAIN_THRESHOLD 2000
 
 void RCC_Configure(void) {
-    // ADC 클럭 설정 (중요: 72MHz / 6 = 12MHz)
+    // [중요] ADC 클럭을 PCLK2의 1/6로 설정 (72MHz / 6 = 12MHz)
+    // 이 설정이 없으면 ADC가 오작동하여 빗물을 감지 못 할 수 있음
     RCC_ADCCLKConfig(RCC_PCLK2_Div6);
     
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOA | 
@@ -47,13 +48,13 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-    // PB0: 부저 (High Active 가정, 초기값 Low)
+    // PB0: 부저
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     GPIO_ResetBits(GPIOB, GPIO_Pin_0); 
 
-    // PC1: 터치 센서 (Rising Edge 인터럽트용)
+    // PC1: 터치 센서 (Rising Edge + Polling 감지용)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD; 
     GPIO_Init(GPIOC, &GPIO_InitStructure);
@@ -104,20 +105,45 @@ void DMA_Configure(void) {
     DMA_Cmd(DMA1_Channel1, ENABLE);
 }
 
+void USART1_Init(void) {
+    USART_InitTypeDef USART_InitStructure;
+    USART_Cmd(USART1, ENABLE);
+    USART_InitStructure.USART_BaudRate = 9600;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_Init(USART1, &USART_InitStructure);
+}
+
+void USART2_Init(void) {
+    USART_InitTypeDef USART_InitStructure;
+    USART_Cmd(USART2, ENABLE);
+    USART_InitStructure.USART_BaudRate = 9600;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_Init(USART2, &USART_InitStructure);
+    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+}
+
 void NVIC_Configure(void) {
     NVIC_InitTypeDef NVIC_InitStructure;
     EXTI_InitTypeDef EXTI_InitStructure;
 
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
-    // TIM2 (1초 카운트)
+    // TIM2
     NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // EXTI1 (PC1 터치 센서)
+    // EXTI1 (PC1 터치)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource1);
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -128,12 +154,12 @@ void NVIC_Configure(void) {
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
     NVIC_Init(&NVIC_InitStructure);
 
-    // ADC AWD (빗물 감지)
+    // ADC AWD (빗물)
     NVIC_InitStructure.NVIC_IRQChannel = ADC1_2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
 
-    // USART2 (블루투스 제어)
+    // USART2
     NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
     NVIC_Init(&NVIC_InitStructure);
