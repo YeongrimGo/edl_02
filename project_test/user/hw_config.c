@@ -11,6 +11,7 @@
 extern volatile uint32_t ADC_Value[1];
 
 void RCC_Configure(void) {
+    // GPIOC 클럭(RCC_APB2Periph_GPIOC)이 포함되어 있어야 PC7 사용 가능 (이미 포함됨)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_USART2, ENABLE);
@@ -19,10 +20,10 @@ void RCC_Configure(void) {
 void GPIO_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // 1. ADC용 GPIO (PA1)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_Init(GPIOD, &GPIO_InitStructure);
+    // [수정됨] 1. 빗물 감지 센서 (PC7) - 디지털 입력
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // Pull-up Input
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     // 2. 알람 정지 버튼 (PA0)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
@@ -102,7 +103,7 @@ void NVIC_Configure(void) {
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // EXTI0
+    // EXTI0 (버튼)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource0);
     EXTI_InitStructure.EXTI_Line = EXTI_Line0;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -115,7 +116,7 @@ void NVIC_Configure(void) {
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
 
-    // EXTI1
+    // EXTI1 (터치센서)
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource1);
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -129,7 +130,7 @@ void NVIC_Configure(void) {
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // ADC1_2 Interrupt (이제 사용 안 하므로 주석 처리하거나 남겨둬도 핸들러가 비어있으면 무방)
+    // ADC1_2 Interrupt (사용 안 함)
     NVIC_InitStructure.NVIC_IRQChannel = ADC1_2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
@@ -168,6 +169,8 @@ void DMA_Configure(void) {
 }
 
 void ADC_Configure(void) {
+   // PC7 디지털 센서 사용 시 ADC 설정은 크게 중요하지 않으나,
+   // 컴파일 에러 방지 및 기존 구조 유지를 위해 남겨둡니다.
    ADC_InitTypeDef ADC_InitStruct;
    ADC_InitStruct.ADC_Mode = ADC_Mode_Independent;
    ADC_InitStruct.ADC_ScanConvMode = DISABLE;
@@ -179,8 +182,6 @@ void ADC_Configure(void) {
 
    ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 1, ADC_SampleTime_28Cycles5);
 
-   // [수정] Watchdog 설정 삭제 및 인터럽트 비활성화
-   // 폴링 방식을 사용하므로 AWD 설정은 필요 없습니다.
    ADC_ITConfig(ADC1, ADC_IT_AWD, DISABLE);
 
    ADC_Cmd(ADC1, ENABLE);
@@ -200,7 +201,6 @@ void USART2_SendString(const char* str) {
     }
 }
 
-// [수정] 터치 센서 비활성화만 수행 (ADC 인터럽트는 켜지 않음)
 void Sensor_Mode_WaitRain(void) {
     EXTI_InitTypeDef EXTI_InitStructure;
 
@@ -210,11 +210,8 @@ void Sensor_Mode_WaitRain(void) {
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
     EXTI_InitStructure.EXTI_LineCmd = DISABLE;
     EXTI_Init(&EXTI_InitStructure);
-
-    // 2. 빗물 센서는 Alarm_Process에서 폴링하므로 인터럽트 설정 안 함
 }
 
-// 시스템 리셋 시 센서 초기화
 void Sensor_Mode_Reset(void) {
     EXTI_InitTypeDef EXTI_InitStructure;
 

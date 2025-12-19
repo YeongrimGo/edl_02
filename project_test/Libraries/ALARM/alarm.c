@@ -3,11 +3,8 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_tim.h"
-#include "inc/hw_config.h" // Sensor_Mode_Reset 등의 함수 포함
+#include "inc/hw_config.h"
 #include <stdio.h>
-
-// [변경] ADC 관련 변수 제거 (디지털 모드에서는 불필요)
-// extern volatile uint32_t ADC_Value[1];
 
 static volatile AlarmState alarm_state = STATE_IDLE;
 static volatile uint32_t countdown_seconds = 0;
@@ -97,7 +94,7 @@ void Alarm_Process(void) {
             case STATE_WAIT_FOR_RAIN:
                 LCD_Clear(YELLOW);
                 LCD_ShowString(40, 50, (u8*)"WAITING RAIN...", BLACK, YELLOW);
-                LCD_ShowString(40, 100, (u8*)"DIGITAL MODE", BLACK, YELLOW); // 표시 변경
+                LCD_ShowString(40, 100, (u8*)"DIGITAL (PC7)", BLACK, YELLOW); // 표시 변경
                 stability_count = 0; // 카운터 리셋
                 break;
             case STATE_ALARM_STOPPED:
@@ -129,19 +126,18 @@ void Alarm_Process(void) {
 
         case STATE_WAIT_FOR_RAIN:
             {
-                // [핵심 변경] PD2 핀의 디지털 값 읽기 (0 or 1)
-                // 센서 모듈 특성상: 물 묻으면 0 (Low), 마르면 1 (High)인 경우가 많음
-                uint8_t rain_bit = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_2);
+                // [수정됨] PC7 핀의 디지털 값 읽기 (DO 핀 연결)
+                uint8_t rain_bit = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7);
 
                 // 현재 상태 LCD 표시
-                if (rain_bit == Bit_RESET) { // 0
+                if (rain_bit == Bit_RESET) { // 0 (Low) - 감지됨
                     sprintf(lcd_buffer, "Sensor: WET (0)");
-                } else { // 1
+                } else { // 1 (High) - 마름
                     sprintf(lcd_buffer, "Sensor: DRY (1)");
                 }
                 LCD_ShowString(40, 150, (u8*)lcd_buffer, BLACK, YELLOW);
 
-                // [안정화 딜레이] 상태 전환 직후 오작동 방지 (약 1~2초)
+                // [안정화 딜레이]
                 if (stability_count < 200000) {
                     stability_count++;
                 }
@@ -150,7 +146,7 @@ void Alarm_Process(void) {
                     if (rain_bit == Bit_RESET) {
                         *p_alarm_state = STATE_ALARM_STOPPED;
                         TIM_Cmd(TIM2, DISABLE);
-                        USART2_SendString("\r\nRain Detected (Digital)! Alarm Stopped.\r\n");
+                        USART2_SendString("\r\nRain Detected on PC7! Alarm Stopped.\r\n");
                     }
                 }
                 Play_Reveille();
