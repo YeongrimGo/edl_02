@@ -77,7 +77,6 @@ void USART2_IRQHandler(void) {
     }
 }
 
-// 터치 센서 (PC1)
 void EXTI1_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {
