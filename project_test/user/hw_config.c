@@ -156,6 +156,16 @@ void Motor_TurnLeft(void) {
     GPIO_SetBits(GPIOB, GPIO_Pin_8);
 }
 
+void Motor_TurnRight(void) {
+    // 왼쪽 전진
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
+    GPIO_SetBits(GPIOA, GPIO_Pin_2); // PB6 -> PA2로 변경됨
+
+    // 오른쪽 후진
+    GPIO_SetBits(GPIOB, GPIO_Pin_7);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+}
+
 void Motor_Stop(void) {
     // 왼쪽 정지 (PB5, PA2 끔)
     GPIO_ResetBits(GPIOB, GPIO_Pin_5);
@@ -165,10 +175,7 @@ void Motor_Stop(void) {
     GPIO_ResetBits(GPIOB, GPIO_Pin_7 | GPIO_Pin_8);
 }
 
-void Motor_Stop(void) {
-    // 모두 Low -> 정지
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8);
-}
+
 
 uint32_t Get_Ultrasonic_Dist(uint8_t sensor_id) {
     GPIO_TypeDef* TRIG_PORT;
