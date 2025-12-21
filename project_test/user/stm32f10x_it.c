@@ -34,10 +34,19 @@ void TIM2_IRQHandler(void) {
 
 void EXTI0_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line0) != RESET) {
-        if (*p_alarm_state == STATE_ALARM_ACTIVE || *p_alarm_state == STATE_WAIT_FOR_RAIN) {
+
+        // [추가] 초기 상태에서 버튼 누르면 블루투스 연결 완료로 간주 -> IDLE 전환
+        if (*p_alarm_state == STATE_WAIT_BLUETOOTH) {
+            *p_alarm_state = STATE_IDLE;
+            // 요청하신 영어 메시지 전송
+            USART2_SendString("\r\nBluetooth Connected. Please send the alarm time in seconds.\r\n");
+        }
+        // 알람 울리는 중이거나 빗물 대기 중일 때 버튼 누르면 알람 종료
+        else if (*p_alarm_state == STATE_ALARM_ACTIVE || *p_alarm_state == STATE_WAIT_FOR_RAIN) {
             *p_alarm_state = STATE_ALARM_STOPPED;
             TIM_Cmd(TIM2, DISABLE);
         }
+
         EXTI_ClearITPendingBit(EXTI_Line0);
     }
 }
@@ -62,7 +71,8 @@ void USART2_IRQHandler(void) {
                     rx_buffer[rx_index] = '\0';
                     int received_val = atoi(rx_buffer);
 
-                    if (received_val > 0) {
+                    // IDLE 상태일 때만 숫자 입력을 받아 알람 시작
+                    if (*p_alarm_state == STATE_IDLE && received_val > 0) {
                         Alarm_Start((uint16_t)received_val);
                     }
                     rx_index = 0;
@@ -77,7 +87,6 @@ void USART2_IRQHandler(void) {
     }
 }
 
-// 터치 센서 (PC1)
 void EXTI1_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {

@@ -26,10 +26,12 @@ int main(void) {
     USART1_Init();
     USART2_Init();
     Alarm_Init();
-    Alarm_Reset();
 
-    // [요청] 블루투스 연결 완료 메시지 (영어)
-    USART2_SendString("\r\nBluetooth Connected. Please send the alarm time in seconds.\r\n");
+    // [수정] 초기 상태를 '블루투스 연결 대기'로 설정
+    Alarm_Reset();
+    *p_alarm_state = STATE_WAIT_BLUETOOTH; // 강제 설정
+
+    // 주의: 초기 메시지는 PA0 버튼을 눌러 STATE_IDLE로 진입할 때 전송됨.
 
     while (1) {
         Alarm_Process();
@@ -39,14 +41,14 @@ int main(void) {
             char time_str[20];
             char report[80];
 
-            // [요청] 00시 00분 00초 형식으로 변환
+            // [수정] 00:00 포맷 적용
             Time_Format(final_time, time_str);
 
             sprintf(report, "\r\n[STOP] Duration: %s\r\n", time_str);
             USART2_SendString(report);
 
             for(volatile int i=0; i<5000000; i++);
-            Alarm_Reset();
+            Alarm_Reset(); // 리셋 후에는 STATE_IDLE 상태가 되어 바로 다음 알람 입력 대기
         }
     }
 }
