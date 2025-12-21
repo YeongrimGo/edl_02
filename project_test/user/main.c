@@ -22,7 +22,7 @@ int main(void) {
     DMA_Configure();
     LCD_Init();
     Touch_Configuration();
-    Touch_Adjust();
+//    Touch_Adjust();
     USART1_Init();
     USART2_Init();
     Alarm_Init();
