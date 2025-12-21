@@ -161,8 +161,8 @@ void Motor_TurnLeft(void) {
 
 void Motor_TurnRight(void) {
     // 왼쪽 전진
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
+    GPIO_SetBits(GPIOC, GPIO_Pin_0);
 
     // 오른쪽 후진
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
