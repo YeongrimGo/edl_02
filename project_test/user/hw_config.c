@@ -109,13 +109,19 @@ void Ultrasonic_Configure(void) {
 void Motor_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // PB5(IN1), PB6(IN2), PB7(IN3), PB8(IN4)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8;
+    // 1. PB5(왼쪽), PB7, PB8(오른쪽) 설정 (기존 유지)
+    // [주의] PB6는 여기서 뺐습니다.
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7 | GPIO_Pin_8;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    // 초기 상태: 정지
+    // 2. PA2(왼쪽 새 핀) 설정 (새로 추가됨!)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure); // ★여기가 GPIOA 인것을 꼭 확인하세요★
+
     Motor_Stop();
 }
 
@@ -125,38 +131,38 @@ void Motor_Configure(void) {
 
 void Motor_Forward(void) {
     // 왼쪽 전진 (IN1=H, IN2=L)
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_6);
-    // 오른쪽 전진 (IN3=H, IN4=L)
-    GPIO_SetBits(GPIOB, GPIO_Pin_7);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
-}
-
-void Motor_Backward(void) {
-    // 왼쪽 후진 (IN1=L, IN2=H)
     GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOB, GPIO_Pin_6);
-    // 오른쪽 후진 (IN3=L, IN4=H)
+    GPIO_SetBits(GPIOA, GPIO_Pin_2);
+    // 오른쪽 전진 (IN3=H, IN4=L)
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
     GPIO_SetBits(GPIOB, GPIO_Pin_8);
 }
 
-void Motor_TurnLeft(void) {
-    // 왼쪽 정지/후진, 오른쪽 전진 -> 좌회전
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_6); // 왼쪽 정지 (필요 시 후진으로 변경 가능)
-
-    GPIO_SetBits(GPIOB, GPIO_Pin_7);   // 오른쪽 전진
+void Motor_Backward(void) {
+    // 왼쪽 후진 (IN1=L, IN2=H)
+    GPIO_SetBits(GPIOB, GPIO_Pin_5);
+    GPIO_ResetBits(GPIOA, GPIO_Pin_2);
+    // 오른쪽 후진 (IN3=L, IN4=H)
+    GPIO_SetBits(GPIOB, GPIO_Pin_7);
     GPIO_ResetBits(GPIOB, GPIO_Pin_8);
 }
 
-void Motor_TurnRight(void) {
-    // 왼쪽 전진, 오른쪽 정지/후진 -> 우회전
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);   // 왼쪽 전진
-    GPIO_ResetBits(GPIOB, GPIO_Pin_6);
+void Motor_TurnLeft(void) {
+    // 왼쪽 정지/후진, 오른쪽 전진 -> 좌회전
+    GPIO_SetBits(GPIOB, GPIO_Pin_5);
+    GPIO_SetBits(GPIOA, GPIO_Pin_2); // 왼쪽 정지 (필요 시 후진으로 변경 가능)
 
-    GPIO_ResetBits(GPIOB, GPIO_Pin_7); // 오른쪽 정지
-    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_7);   // 오른쪽 전진
+    GPIO_SetBits(GPIOB, GPIO_Pin_8);
+}
+
+void Motor_Stop(void) {
+    // 왼쪽 정지 (PB5, PA2 끔)
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
+    GPIO_ResetBits(GPIOA, GPIO_Pin_2); // PB6 -> PA2로 변경됨
+
+    // 오른쪽 정지
+    GPIO_ResetBits(GPIOB, GPIO_Pin_7 | GPIO_Pin_8);
 }
 
 void Motor_Stop(void) {
