@@ -16,12 +16,12 @@ int main(void) {
     RCC_Configure();
     GPIO_Configure();
     Ultrasonic_Configure();
-    Motor_Configure();
     NVIC_Configure();
     ADC_Configure();
     DMA_Configure();
     LCD_Init();
     Touch_Configuration();
+    Motor_Configure();
 //    Touch_Adjust();
     USART1_Init();
     USART2_Init();
