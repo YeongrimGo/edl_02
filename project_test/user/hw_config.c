@@ -105,96 +105,78 @@ void Ultrasonic_Configure(void) {
     GPIO_ResetBits(GPIOB, GPIO_Pin_10);
 }
 
-// [추가] 모터 핀 설정 (PB5, PB6, PB7, PB8)
-void Motor_Configure(void) {
+void Motor_Configure(void)
+{
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // 1. PB5(왼쪽), PB7, PB8(오른쪽) 설정
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7 | GPIO_Pin_8;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC, ENABLE);
+
+    // Left: PC0, PC10
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_10;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+    // Right: PB7, PB8
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_8;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    // 2. PC0(왼쪽 새 핀) 설정 - 센서 간섭 피하기
-    // (RCC_Configure에서 GPIOC 클럭 켜져 있어야 함)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOC, &GPIO_InitStructure); 
-
+    // 초기 정지
     Motor_Stop();
 }
 
-// === 모터 제어 함수 구현 ===
-// IN1(PB5), IN2(PB6) : 왼쪽 모터
-// IN3(PB7), IN4(PB8) : 오른쪽 모터
+
+// Left: IN1(PC10), IN2(PC0) / Right: IN3(PB7), IN4(PB8)
+// 앞뒤, 좌우 반전 적용된 상태(기존 동작 의미 유지)
 
 void Motor_Forward(void) {
-    // 왼쪽 전진 (반대로: Reset/Set)
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOC, GPIO_Pin_0); 
-    
-    // 오른쪽 전진 (반대로: Reset/Set)
+    // Left: IN1=0, IN2=1
+    GPIO_ResetBits(GPIOC, GPIO_Pin_10);
+    GPIO_SetBits  (GPIOC, GPIO_Pin_0);
+
+    // Right: IN3=0, IN4=1
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
-    GPIO_SetBits(GPIOB, GPIO_Pin_8);
-    
-    char buf[80];
-    sprintf(buf, "PB5 ODR=%d PB5 IDR=%d | PC0 ODR=%d PC0 IDR=%d PB5->CRL=0x%08lx, PC0->CRL=0x%08lx\r\n",
-              (int)GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_5),
-              (int)GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_5),
-              (int)GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_0),
-              (int)GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_0),
-              (unsigned long)GPIOB->CRL,
-              (unsigned long)GPIOC->CRL);  
-    USART2_SendString(buf);
+    GPIO_SetBits  (GPIOB, GPIO_Pin_8);
 }
 
 void Motor_Backward(void) {
-    // 왼쪽 후진 (반대로: Set/Reset)
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOC, GPIO_Pin_0); 
+    // Left: IN1=1, IN2=0
+    GPIO_SetBits  (GPIOC, GPIO_Pin_10);
+    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
 
-    // 오른쪽 후진 (반대로: Set/Reset)
-    GPIO_SetBits(GPIOB, GPIO_Pin_7);
+    // Right: IN3=1, IN4=0
+    GPIO_SetBits  (GPIOB, GPIO_Pin_7);
     GPIO_ResetBits(GPIOB, GPIO_Pin_8);
-    
-    char buf[80];
-    sprintf(buf, "PB5 ODR=%d PB5 IDR=%d | PC0 ODR=%d PC0 IDR=%d PB5->CRL=0x%08lx, PC0->CRL=0x%08lx\r\n",
-              (int)GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_5),
-              (int)GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_5),
-              (int)GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_0),
-              (int)GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_0),
-              (unsigned long)GPIOB->CRL,
-              (unsigned long)GPIOC->CRL);  
-    USART2_SendString(buf);
 }
 
 void Motor_TurnLeft(void) {
-    // 왼쪽 후진
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);
+    // Left: backward (IN1=1, IN2=0)
+    GPIO_SetBits  (GPIOC, GPIO_Pin_10);
     GPIO_ResetBits(GPIOC, GPIO_Pin_0);
 
-    // 오른쪽 전진
+    // Right: stop (IN3=0, IN4=0)
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
-    GPIO_SetBits(GPIOB, GPIO_Pin_8);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
 }
 
 void Motor_TurnRight(void) {
-    // 왼쪽 전진
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOC, GPIO_Pin_0);
+    // Left: stop (IN1=0, IN2=0)
+    GPIO_ResetBits(GPIOC, GPIO_Pin_10);
+    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
 
-    // 오른쪽 후진
-    GPIO_SetBits(GPIOB, GPIO_Pin_7);
+    // Right: backward (IN3=1, IN4=0)
+    GPIO_SetBits  (GPIOB, GPIO_Pin_7);
     GPIO_ResetBits(GPIOB, GPIO_Pin_8);
 }
 
 void Motor_Stop(void) {
-    // 모두 정지 (전부 Reset)
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOC, GPIO_Pin_0);
+    // Left stop
+    GPIO_ResetBits(GPIOC, GPIO_Pin_10 | GPIO_Pin_0);
+    // Right stop
     GPIO_ResetBits(GPIOB, GPIO_Pin_7 | GPIO_Pin_8);
 }
+
 
 
 uint32_t Get_Ultrasonic_Dist(uint8_t sensor_id) {
