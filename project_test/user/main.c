@@ -19,7 +19,7 @@ int main(void) {
     NVIC_Configure();
     ADC_Configure();
     DMA_Configure();
-    LCD_Init();
+//    LCD_Init();
     Touch_Configuration();
     Motor_Configure();
 //    Touch_Adjust();

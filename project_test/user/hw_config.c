@@ -133,10 +133,20 @@ void Motor_Forward(void) {
     // 왼쪽 전진 (반대로: Reset/Set)
     GPIO_ResetBits(GPIOB, GPIO_Pin_5);
     GPIO_SetBits(GPIOC, GPIO_Pin_0); 
-
+    
     // 오른쪽 전진 (반대로: Reset/Set)
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
     GPIO_SetBits(GPIOB, GPIO_Pin_8);
+    
+    char buf[80];
+    sprintf(buf, "PB5 ODR=%d PB5 IDR=%d | PC0 ODR=%d PC0 IDR=%d PB5->CRL=0x%08lx, PC0->CRL=0x%08lx\r\n",
+              (int)GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_5),
+              (int)GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_5),
+              (int)GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_0),
+              (int)GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_0),
+              (unsigned long)GPIOB->CRL,
+              (unsigned long)GPIOC->CRL);  
+    USART2_SendString(buf);
 }
 
 void Motor_Backward(void) {
@@ -147,6 +157,16 @@ void Motor_Backward(void) {
     // 오른쪽 후진 (반대로: Set/Reset)
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
     GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+    
+    char buf[80];
+    sprintf(buf, "PB5 ODR=%d PB5 IDR=%d | PC0 ODR=%d PC0 IDR=%d PB5->CRL=0x%08lx, PC0->CRL=0x%08lx\r\n",
+              (int)GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_5),
+              (int)GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_5),
+              (int)GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_0),
+              (int)GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_0),
+              (unsigned long)GPIOB->CRL,
+              (unsigned long)GPIOC->CRL);  
+    USART2_SendString(buf);
 }
 
 void Motor_TurnLeft(void) {

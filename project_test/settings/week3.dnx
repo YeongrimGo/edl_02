@@ -46,7 +46,7 @@
         <LeaveTargetRunning>_ 0</LeaveTargetRunning>
     </JLinkDriver>
     <DebugChecksum>
-        <Checksum>2777328560</Checksum>
+        <Checksum>1131762361</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -57,6 +57,7 @@
     </CodeCoverage>
     <Disassembly>
         <InstrCount>0</InstrCount>
+        <MixedMode>1</MixedMode>
     </Disassembly>
     <CallStack>
         <ShowArgs>0</ShowArgs>
@@ -69,8 +70,8 @@
         <mode>0</mode>
     </DisassembleMode>
     <Breakpoints2>
-        <Bp0>_ 0 "EMUL_CODE" "{$PROJ_DIR$\Libraries\ALARM\alarm.c}.95.13" 0 0 1 "" 0 "" 0</Bp0>
-        <Bp1>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\..\project_test\user\main.c}.0.1" 0 0 1 "" 0 "" 0</Bp1>
+        <Bp0>_ 0 "EMUL_CODE" "{$PROJ_DIR$\Libraries\ALARM\alarm.c}.240.21" 0 0 1 "" 0 "" 0</Bp0>
+        <Bp1>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\project_test\user\main.c}.0.1" 0 0 1 "" 0 "" 0</Bp1>
         <Count>2</Count>
     </Breakpoints2>
     <LogFile>
@@ -79,7 +80,9 @@
         <Category>_ 0</Category>
     </LogFile>
     <Aliases>
-        <Count>0</Count>
+        <A0>_ "C:\tue_team2\edl_02\project_test\Libraries\CMSIS\DeviceSupport\system_stm32f10x.c" ""</A0>
+        <A1>_ "C:\tue_team2\edl_02\project_test\user\main.c" ""</A1>
+        <Count>2</Count>
         <SuppressDialog>0</SuppressDialog>
     </Aliases>
     <DriverProfiling>

@@ -1,13 +1,13 @@
 ###############################################################################
 #
-# IAR ANSI C/C++ Compiler V8.22.1.15669/W32 for ARM       20/Dec/2025  03:27:00
+# IAR ANSI C/C++ Compiler V8.22.1.15669/W32 for ARM       22/Dec/2025  02:12:35
 # Copyright 1999-2018 IAR Systems AB.
 #
 #    Cpu mode     =  thumb
 #    Endian       =  little
 #    Source file  =  C:\tue_team2\edl_02\project_test\user\stm32f10x_it.c
 #    Command line =  
-#        -f C:\Users\pnu2\AppData\Local\Temp\EW4A35.tmp
+#        -f C:\Users\pnu5\AppData\Local\Temp\EW8D09.tmp
 #        (C:\tue_team2\edl_02\project_test\user\stm32f10x_it.c -D
 #        USE_STDPERIPH_DRIVER -D STM32F10X_CL -lC
 #        C:\tue_team2\edl_02\project_test\Debug\List -o
@@ -334,42 +334,36 @@ C:\tue_team2\edl_02\project_test\user\stm32f10x_it.c
    \   00000010   0x7800             LDRB     R0,[R0, #+0]
    \   00000012   0x2802             CMP      R0,#+2
    \   00000014   0xD108             BNE.N    ??EXTI1_IRQHandler_1
-     84                      // @@@ ?€@?@@@@??@@
-     85                      *p_alarm_state = STATE_WAIT_FOR_RAIN;
+     84                      *p_alarm_state = STATE_WAIT_FOR_RAIN;
    \   00000016   0x2003             MOVS     R0,#+3
    \   00000018   0x....             LDR.N    R1,??DataTable5
    \   0000001A   0x6809             LDR      R1,[R1, #+0]
    \   0000001C   0x7008             STRB     R0,[R1, #+0]
-     86          
-     87                      // ?@@ ?@@ @@@?@@
-     88                      Sensor_Mode_WaitRain();
+     85                      Sensor_Mode_WaitRain();
    \   0000001E   0x.... 0x....      BL       Sensor_Mode_WaitRain
-     89          
-     90                      USART2_SendString("\r\nTouch Detected! Waiting for rain...\r\n");
+     86                      USART2_SendString("\r\nTouch Detected! Waiting for rain...\r\n");
    \   00000022   0x....             LDR.N    R0,??DataTable5_7
    \   00000024   0x.... 0x....      BL       USART2_SendString
-     91                  }
-     92                  EXTI_ClearITPendingBit(EXTI_Line1);
+     87                  }
+     88                  EXTI_ClearITPendingBit(EXTI_Line1);
    \                     ??EXTI1_IRQHandler_1: (+1)
    \   00000028   0x2002             MOVS     R0,#+2
    \   0000002A   0x.... 0x....      BL       EXTI_ClearITPendingBit
-     93              }
-     94          }
+     89              }
+     90          }
    \                     ??EXTI1_IRQHandler_0: (+1)
    \   0000002E   0xBD01             POP      {R0,PC}          ;; return
-     95          
-     96          // [?@@] @@@ @@? ?@@?@@???@@?@? ?@@@€@?@@@?
+     91          
 
    \                                 In section .text, align 2, keep-with-next
-     97          void ADC1_2_IRQHandler(void) {
+     92          void ADC1_2_IRQHandler(void) {
    \                     ADC1_2_IRQHandler: (+1)
    \   00000000   0xB580             PUSH     {R7,LR}
-     98              // ?@@ @@@?@@ @€@@@?@@@€@??@@???@@?€ @@?
-     99              ADC_ClearITPendingBit(ADC1, ADC_IT_AWD);
+     93              ADC_ClearITPendingBit(ADC1, ADC_IT_AWD);
    \   00000002   0xF44F 0x71A0      MOV      R1,#+320
    \   00000006   0x....             LDR.N    R0,??DataTable5_8  ;; 0x40012400
    \   00000008   0x.... 0x....      BL       ADC_ClearITPendingBit
-    100          }
+     94          }
    \   0000000C   0xBD01             POP      {R0,PC}          ;; return
 
    \                                 In section .text, align 4, keep-with-next
