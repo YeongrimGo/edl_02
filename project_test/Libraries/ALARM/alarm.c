@@ -81,11 +81,15 @@ void Alarm_Process(void) {
     static AlarmState last_state = STATE_IDLE;
     static uint32_t stability_count = 0;
 
-    // 센서 값 저장 변수
-    uint32_t dist_L = 0, dist_C = 0, dist_R = 0;
+    // [수정 1] 소리 재생 빈도 조절을 위한 카운터 변수 추가
+    static uint32_t sound_tick = 0;
 
-    // 거리 기준 (cm)
-    const uint32_t OBS_THRESHOLD = 30; // 30cm 이내면 장애물로 인식
+    // 초음파 센서 변수
+    static uint32_t dist_L = 0, dist_C = 0, dist_R = 0;
+    static uint32_t sensor_timer = 0;
+
+    // 장애물 인식 거리 (cm)
+    const uint32_t OBS_THRESHOLD = 25;
 
     // 상태 변경 시 화면 초기화 (기존과 동일)
     if (last_state != *p_alarm_state) {
@@ -106,6 +110,7 @@ void Alarm_Process(void) {
              Motor_Stop();
              LCD_Clear(WHITE);
              LCD_ShowString(40, 50, (u8*)"[IDLE MODE]", BLACK, WHITE);
+             LCD_ShowString(40, 80, (u8*)"Sensor Check", BLUE, WHITE);
         }
         last_state = *p_alarm_state;
     }
@@ -122,93 +127,72 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_ACTIVE:
-            LCD_ShowString(40, 50, (u8*)"STEP DRIVE MODE", WHITE, RED);
+            // === 도망가는 알람 모드 (자율주행 개선) ===
+            LCD_ShowString(40, 50, (u8*)"RUNAWAY ALARM!", WHITE, RED);
 
-            // ====================================================
-            // STEP 1: 일단 멈춰서 센서 확인 (안전을 위해 정지 후 스캔)
-            // ====================================================
-            Motor_Stop();
-            // 모터 끄고 잠시 대기 (진동 안정화)
-            for(volatile int i=0; i<20000; i++);
-
-            // 초음파 측정 (간섭 방지 딜레이 포함)
+            // [수정 2] 센서 측정 간 간섭 방지 딜레이 추가
+            // 초음파 잔향이 사라질 틈을 주어 정확도 향상
             dist_L = Get_Ultrasonic_Dist(1);
-            for(volatile int i=0; i<5000; i++);
+            for(volatile int i=0; i<10000; i++);
 
             dist_C = Get_Ultrasonic_Dist(2);
-            for(volatile int i=0; i<5000; i++);
+            for(volatile int i=0; i<10000; i++);
 
             dist_R = Get_Ultrasonic_Dist(3);
 
-            // LCD에 거리 표시
             sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
             LCD_ShowString(20, 110, (u8*)lcd_buffer, YELLOW, RED);
 
-            // 0값(에러)을 아주 먼 거리(999)로 치환
-            if(dist_L == 0) dist_L = 999;
-            if(dist_C == 0) dist_C = 999;
-            if(dist_R == 0) dist_R = 999;
-
-
-            // ====================================================
-            // STEP 2: 방향 결정 (어디로 갈지 정하기)
-            // ====================================================
-            if (dist_C < OBS_THRESHOLD) {
-                // 정면 막힘 -> 후진 후 넓은 쪽으로
-                LCD_ShowString(100, 140, (u8*)"OBSTACLE!   ", YELLOW, RED);
-                Motor_Backward(); // 일단 후진 명령 (실행은 아래 소리 재생 동안 지속됨)
-
-                // 후진은 조금 짧게 하고 회전하는 게 좋음 (별도 처리)
-                 for(volatile int i=0; i<200000; i++); // 짧게 후진
-
-                 if (dist_L > dist_R) Motor_TurnLeft();
-                 else Motor_TurnRight();
+            // [수정 3] 주행 로직
+            // 값이 0인 경우는 센서 오류거나 허공이므로 제외하고 판단
+            if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
+                Motor_Backward(); // 후진
+                LCD_ShowString(100, 140, (u8*)"BACKWARD", YELLOW, RED);
             }
-            else if (dist_L < OBS_THRESHOLD) {
-                LCD_ShowString(100, 140, (u8*)"RIGHT TURN  ", YELLOW, RED);
-                Motor_TurnRight();
+            else if (dist_L > 0 && dist_L < OBS_THRESHOLD) {
+                Motor_TurnRight(); // 왼쪽 장애물 -> 우회전
+                LCD_ShowString(100, 140, (u8*)"RIGHT   ", YELLOW, RED);
             }
-            else if (dist_R < OBS_THRESHOLD) {
-                LCD_ShowString(100, 140, (u8*)"LEFT TURN   ", YELLOW, RED);
-                Motor_TurnLeft();
+            else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
+                Motor_TurnLeft(); // 오른쪽 장애물 -> 좌회전
+                LCD_ShowString(100, 140, (u8*)"LEFT    ", YELLOW, RED);
             }
             else {
-                // 장애물 없음 -> 전진
-                LCD_ShowString(100, 140, (u8*)"GO FORWARD  ", WHITE, RED);
-                Motor_Forward();
+                Motor_Forward(); // 장애물 없음 -> 전진
+                LCD_ShowString(100, 140, (u8*)"FORWARD ", WHITE, RED);
             }
 
-
-            // ====================================================
-            // STEP 3: 1초 동안 행동 유지 (소리 재생 + 이동)
-            // ====================================================
-            // Play_Reveille 함수가 실행되는 동안(약 0.6~0.8초)
-            // 위에서 설정한 모터 상태가 계속 유지됩니다.
-            Play_Reveille();
-
-            // 시간이 조금 부족하면 추가 딜레이로 1초를 맞춤
-            for(volatile int i=0; i<100000; i++);
-
-            // ====================================================
-            // 루프 끝 -> 다시 위로 올라가서 Motor_Stop() 실행됨
-            // ====================================================
+            // [수정 4] 소리 재생 빈도 조절
+            // 매번 소리를 내면 로봇이 멈칫거리거나 계속 돕니다.
+            // 5번 루프 돌 때 1번만 소리를 내서 주행 반응성을 높입니다.
+            sound_tick++;
+            if (sound_tick > 5) {
+                Play_Reveille();
+                sound_tick = 0;
+            }
             break;
 
         case STATE_WAIT_FOR_RAIN:
             Motor_Stop();
-            // (기존 빗물 감지 코드 유지)
             {
                 uint16_t rain_val = (uint16_t)ADC_Value[0];
                 sprintf(lcd_buffer, "Rain: %04d", rain_val);
                 LCD_ShowString(40, 150, (u8*)lcd_buffer, BLACK, YELLOW);
+
                 if (stability_count < 10) stability_count++;
-                else if (rain_val < 2000) {
-                    *p_alarm_state = STATE_ALARM_STOPPED;
-                    TIM_Cmd(TIM2, DISABLE);
+                else {
+                    if (rain_val < 2000) {
+                        *p_alarm_state = STATE_ALARM_STOPPED;
+                        TIM_Cmd(TIM2, DISABLE);
+                    }
                 }
 
-                // 빗물 대기 중에도 소리 재생
-                Play_Reveille();
+                // 빗물 대기 중에도 소리는 띄엄띄엄 (선택 사항)
+                sound_tick++;
+                if (sound_tick > 10) {
+                    Play_Reveille();
+                    sound_tick = 0;
+                }
             }
             break;
 
@@ -220,10 +204,27 @@ void Alarm_Process(void) {
             break;
 
         case STATE_IDLE:
-            // (기존 IDLE 코드 유지)
-             GPIO_SetBits(GPIOB, GPIO_Pin_0);
-             Motor_Stop();
-             // IDLE 상태에서도 센서값 확인용 (필요 시)
+            GPIO_SetBits(GPIOB, GPIO_Pin_0);
+            Motor_Stop();
+
+            sensor_timer++;
+            if (sensor_timer > 2000) {
+                dist_L = Get_Ultrasonic_Dist(1);
+                dist_C = Get_Ultrasonic_Dist(2);
+                dist_R = Get_Ultrasonic_Dist(3);
+                sensor_timer = 0;
+
+                sprintf(lcd_buffer, "L:%3d", (int)dist_L);
+                LCD_ShowString(20, 120, (u8*)lcd_buffer, BLUE, WHITE);
+
+                sprintf(lcd_buffer, "C:%3d", (int)dist_C);
+                LCD_ShowString(110, 120, (u8*)lcd_buffer, RED, WHITE);
+
+                sprintf(lcd_buffer, "R:%3d", (int)dist_R);
+                LCD_ShowString(200, 120, (u8*)lcd_buffer, BLUE, WHITE);
+
+                LCD_ShowString(60, 150, (u8*)"[Waiting...]", BLACK, WHITE);
+            }
             break;
     }
 }
