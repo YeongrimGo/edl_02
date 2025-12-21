@@ -57,21 +57,21 @@ void Ultrasonic_Configure(void) {
 void Motor_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
-    // [수정] PB6 대신 PB9 사용
-    // IN1(PB5), IN2(PB9), IN3(PB7), IN4(PB8)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_9 | GPIO_Pin_7 | GPIO_Pin_8;
+    // [수정 완료] PB9 -> PB12로 변경
+    // IN1(PB5), IN2(PB12), IN3(PB7), IN4(PB8)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_12 | GPIO_Pin_7 | GPIO_Pin_8;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     Motor_Stop();
 }
 
-// --- 모터 제어 함수 수정 (PB6 -> PB9) ---
+// --- 모터 제어 함수 수정됨 (PB9 -> PB12) ---
 
 void Motor_Forward(void) {
     // 왼쪽 바퀴 전진 (IN1=0, IN2=1)
     GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOB, GPIO_Pin_9); // PB6 -> PB9
+    GPIO_SetBits(GPIOB, GPIO_Pin_12); // [수정] PB12
     // 오른쪽 바퀴 전진 (IN3=0, IN4=1)
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
     GPIO_SetBits(GPIOB, GPIO_Pin_8);
@@ -80,7 +80,7 @@ void Motor_Forward(void) {
 void Motor_Backward(void) {
     // 왼쪽 바퀴 후진 (IN1=1, IN2=0)
     GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_9); // PB6 -> PB9
+    GPIO_ResetBits(GPIOB, GPIO_Pin_12); // [수정] PB12
     // 오른쪽 바퀴 후진 (IN3=1, IN4=0)
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
     GPIO_ResetBits(GPIOB, GPIO_Pin_8);
@@ -89,7 +89,7 @@ void Motor_Backward(void) {
 void Motor_TurnLeft(void) {
     // 왼쪽: 후진
     GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_9); // PB6 -> PB9
+    GPIO_ResetBits(GPIOB, GPIO_Pin_12); // [수정] PB12
 
     // 오른쪽: 전진
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
@@ -99,7 +99,7 @@ void Motor_TurnLeft(void) {
 void Motor_TurnRight(void) {
     // 왼쪽: 전진
     GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOB, GPIO_Pin_9); // PB6 -> PB9
+    GPIO_SetBits(GPIOB, GPIO_Pin_12); // [수정] PB12
 
     // 오른쪽: 후진
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
@@ -107,8 +107,8 @@ void Motor_TurnRight(void) {
 }
 
 void Motor_Stop(void) {
-    // PB6 -> PB9
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5 | GPIO_Pin_9 | GPIO_Pin_7 | GPIO_Pin_8);
+    // [수정] PB12 포함하여 정지
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5 | GPIO_Pin_12 | GPIO_Pin_7 | GPIO_Pin_8);
 }
 
 uint32_t Get_Ultrasonic_Dist(uint8_t sensor_id) {
