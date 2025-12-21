@@ -16,7 +16,7 @@ volatile uint32_t* p_countdown_seconds = &countdown_seconds;
 volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
 volatile AlarmState* p_alarm_state = &alarm_state;
 
-// --- 기상나팔 ---
+// --- 기상나팔 (박자를 줄여서 반응속도 향상) ---
 #define NOTE_G  3000
 #define NOTE_C  2250
 #define NOTE_E  1800
@@ -24,11 +24,11 @@ volatile AlarmState* p_alarm_state = &alarm_state;
 uint16_t reveille_notes[] = {
     NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G
 };
+// 박자가 너무 길면 센서 반응이 느려지므로 짧게 설정
 uint32_t reveille_beats[] = {
-    30, 30, 30, 30, 60  // 짧게 끊어 쳐서 센서 볼 시간을 확보
+    10, 10, 10, 10, 20  
 };
 
-// [추가] 시간 포맷 헬퍼 함수
 void Time_Format(uint32_t total_seconds, char* buffer) {
     uint32_t h = total_seconds / 3600;
     uint32_t m = (total_seconds % 3600) / 60;
@@ -37,12 +37,14 @@ void Time_Format(uint32_t total_seconds, char* buffer) {
 }
 
 static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
+    // 소리 내는 루프 (Blocking 방지를 위해 짧게 유지)
     for (uint32_t i = 0; i < duration; i++) {
         GPIO_SetBits(GPIOB, GPIO_Pin_0);
         for (volatile int d = 0; d < pitch; d++);
         GPIO_ResetBits(GPIOB, GPIO_Pin_0);
         for (volatile int d = 0; d < pitch; d++);
 
+        // 알람이 꺼지면 즉시 소리 중단
         if (*p_alarm_state == STATE_ALARM_STOPPED || *p_alarm_state == STATE_IDLE) return;
     }
 }
@@ -62,10 +64,11 @@ void Play_Reveille(void) {
 void Alarm_Init(void) {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_TimeBaseStructure.TIM_Prescaler = 7200 - 1;
-    TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
+    TIM_TimeBaseStructure.TIM_Period = 10000 - 1; // 1초 주기
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
     TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+    TIM_Cmd(TIM2, DISABLE); // 처음엔 꺼둠
 }
 
 void Alarm_Start(uint16_t seconds) {
@@ -78,7 +81,7 @@ void Alarm_Start(uint16_t seconds) {
         Motor_Stop();
 
         LCD_Clear(WHITE);
-        LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
+        LCD_ShowString(40, 50, (u8*)"COUNTDOWN...", RED, WHITE);
         TIM_Cmd(TIM2, ENABLE);
     }
 }
@@ -90,13 +93,11 @@ void Alarm_Process(void) {
     static AlarmState last_state = STATE_IDLE;
     static uint32_t stability_count = 0;
 
-    // [수정] 카운터 변수 제거 (매번 체크하기 위함)
     static uint32_t dist_L = 0, dist_C = 0, dist_R = 0;
-    static uint32_t sensor_timer = 0; // IDLE 상태용
-
+    static uint32_t sensor_timer = 0; 
     const uint32_t OBS_THRESHOLD = 25;
 
-    // 상태 변경 시 화면 초기화 로직 (기존과 동일)
+    // 상태 변경 시 화면 초기화
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
@@ -121,22 +122,28 @@ void Alarm_Process(void) {
 
     switch (*p_alarm_state) {
         case STATE_COUNTDOWN:
+            // 1. 남은 시간 표시
             if (last_sec != *p_countdown_seconds) {
                 last_sec = *p_countdown_seconds;
                 Time_Format(last_sec, time_str);
                 sprintf(lcd_buffer, "Rem: %s", time_str);
-                LCD_ShowString(20, 130, (u8*)lcd_buffer, BLUE, WHITE);
+                LCD_ShowString(20, 100, (u8*)lcd_buffer, BLUE, WHITE);
             }
-            // 카운트다운 중에는 틱 소리만 짧게 (부저 OFF)
+            
+            // ★[추가된 부분] 카운트다운 중에도 센서값을 읽어서 멈추지 않았음을 보여줌
+            dist_L = Get_Ultrasonic_Dist(1);
+            dist_C = Get_Ultrasonic_Dist(2);
+            dist_R = Get_Ultrasonic_Dist(3);
+            
+            sprintf(lcd_buffer, "SENS: %2d %2d %2d", (int)dist_L, (int)dist_C, (int)dist_R);
+            LCD_ShowString(20, 140, (u8*)lcd_buffer, BLACK, WHITE);
+
             GPIO_ResetBits(GPIOB, GPIO_Pin_0); 
             Motor_Stop();
             break;
 
         case STATE_ALARM_ACTIVE:
             LCD_ShowString(40, 20, (u8*)"RUNAWAY ALARM!", WHITE, RED);
-
-            // [핵심 수정] if (counter > 5) 조건을 없앴습니다!
-            // 이제 부저 한 음(Note)이 끝나자마자 즉시 센서를 봅니다.
             
             // 1. 센서 측정
             dist_L = Get_Ultrasonic_Dist(1);
@@ -165,8 +172,7 @@ void Alarm_Process(void) {
                 Motor_Forward();
             }
 
-            // [중요] 부저 소리 재생 (beats 숫자를 줄여야 센서 반응이 빨라집니다)
-            Play_Reveille();
+            Play_Reveille(); // 소리 재생
             break;
 
         case STATE_WAIT_FOR_RAIN:
@@ -188,7 +194,7 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_STOPPED:
-            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 소리 끄기 (Active High Buzzer 가정) -> 혹시 계속 울리면 ResetBits로 바꾸세요
+            GPIO_SetBits(GPIOB, GPIO_Pin_0); 
             Motor_Stop();
             Time_Format(*p_elapsed_seconds, time_str);
             sprintf(lcd_buffer, "Total: %s", time_str);
@@ -196,12 +202,11 @@ void Alarm_Process(void) {
             break;
 
         case STATE_IDLE:
-            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 소리 끄기
+            GPIO_SetBits(GPIOB, GPIO_Pin_0); 
             Motor_Stop();
             
-            // IDLE 상태는 여유가 있으니 천천히 검사해도 됨
             sensor_timer++;
-            if (sensor_timer > 2000) {
+            if (sensor_timer > 1000) { // 반응속도 조금 빠르게 수정
                 dist_L = Get_Ultrasonic_Dist(1);
                 dist_C = Get_Ultrasonic_Dist(2);
                 dist_R = Get_Ultrasonic_Dist(3);
@@ -228,10 +233,7 @@ void Alarm_Reset(void) {
     TIM_Cmd(TIM2, DISABLE);
     GPIO_SetBits(GPIOB, GPIO_Pin_0);
     Motor_Stop();
-
     Sensor_Mode_Reset();
-
     LCD_Clear(WHITE);
-    // 초기화면 메시지 (선택 사항)
     LCD_ShowString(40, 100, (u8*)"System Ready", BLUE, WHITE);
 }
