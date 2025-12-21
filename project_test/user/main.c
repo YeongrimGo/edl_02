@@ -7,6 +7,9 @@
 #include "inc/hw_config.h" 
 #include <stdio.h>
 
+// [수정] 컴파일 에러 해결을 위한 함수 선언 추가
+void Time_Format(uint32_t total_seconds, char* buffer);
+
 extern volatile AlarmState* p_alarm_state;
 
 volatile uint32_t ADC_Value[1];

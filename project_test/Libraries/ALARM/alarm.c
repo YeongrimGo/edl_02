@@ -92,7 +92,6 @@ void Alarm_Process(void) {
     // 이동 및 센서 스캔 관련 변수
     static uint32_t last_move_check_time = 0;
     static uint8_t move_decision_needed = 0;
-    static uint32_t real_time_sensor_counter = 0; // 실시간 업데이트용 카운터
 
     static uint32_t dist_L = 0, dist_C = 0, dist_R = 0;
     static uint32_t sensor_timer = 0;
@@ -138,16 +137,13 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_ACTIVE:
-            // 1. 경과 시간 표시 (00분 00초)
+            // 1. 경과 시간 표시 (00:00)
             Time_Format(*p_elapsed_seconds, time_str);
             sprintf(lcd_buffer, "Time: %s", time_str);
             LCD_ShowString(20, 20, (u8*)lcd_buffer, WHITE, RED);
 
-            // 2. [실시간] 센서 값 업데이트 (느리지 않게, 매번 혹은 자주 수행)
-            // 소리 재생 사이사이에 호출됨.
-            real_time_sensor_counter++;
-            // 너무 자주하면 부저가 끊길 수 있으니 약간의 텀을 주되 사용자에게는 '실시간' 처럼 보이게 함
-            if (real_time_sensor_counter > 5) {
+            // 2. [실시간] 센서 값 업데이트 (느리다는 피드백 반영: 카운터 제거, 매 루프 실행)
+            {
                 // 센서 ID 교차 적용 (3=L, 1=R)
                 dist_L = Get_Ultrasonic_Dist(3);
                 dist_C = Get_Ultrasonic_Dist(2);
@@ -155,12 +151,9 @@ void Alarm_Process(void) {
 
                 sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
                 LCD_ShowString(20, 80, (u8*)lcd_buffer, YELLOW, RED);
-
-                real_time_sensor_counter = 0;
             }
 
             // 3. [2초 주기] 이동 방향 결정 로직
-            // 2초마다 트리거
             if ((*p_elapsed_seconds % 2 == 0) && (*p_elapsed_seconds != last_move_check_time)) {
                 move_decision_needed = 1;
                 last_move_check_time = *p_elapsed_seconds;
@@ -171,8 +164,7 @@ void Alarm_Process(void) {
                 Motor_Stop();
                 LCD_ShowString(20, 110, (u8*)"Scan & Decide..", YELLOW, RED);
 
-                // (2) 멈춘 상태에서 정확한 판단을 위해 한 번 더 센서 읽기 (선택사항, 위 실시간 값 써도 됨)
-                // 확실하게 하기 위해 읽음
+                // (2) 멈춘 상태에서 정확한 판단을 위해 다시 측정 (선택 사항이나 정확도 위해 유지)
                 dist_L = Get_Ultrasonic_Dist(3);
                 dist_C = Get_Ultrasonic_Dist(2);
                 dist_R = Get_Ultrasonic_Dist(1);
@@ -180,26 +172,21 @@ void Alarm_Process(void) {
                 // (3) 방향 판단 및 이동 시작
                 if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
                     LCD_ShowString(20, 110, (u8*)"Go Back...     ", WHITE, RED);
-                    // hw_config에서 Backward가 '전진'이므로, '후진' 하려면 Forward 호출
-                    Motor_Forward();
+                    Motor_Forward(); // hw_config 상 Forward -> 실제 후진
                 }
                 else if (dist_L > 0 && dist_L < OBS_THRESHOLD) {
                     LCD_ShowString(20, 110, (u8*)"Turn Right...  ", WHITE, RED);
-                    // hw_config에서 TurnLeft가 '우회전'
-                    Motor_TurnLeft();
+                    Motor_TurnLeft(); // hw_config 상 TurnLeft -> 실제 우회전
                 }
                 else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
                     LCD_ShowString(20, 110, (u8*)"Turn Left...   ", WHITE, RED);
-                    // hw_config에서 TurnRight가 '좌회전'
-                    Motor_TurnRight();
+                    Motor_TurnRight(); // hw_config 상 TurnRight -> 실제 좌회전
                 }
                 else {
                     LCD_ShowString(20, 110, (u8*)"Go Forward...  ", WHITE, RED);
-                    // 평소 주행: hw_config에서 Backward가 '전진'
-                    Motor_Backward();
+                    Motor_Backward(); // hw_config 상 Backward -> 실제 전진
                 }
 
-                // 결정 완료, 다음 2초가 될 때까지 이 상태 유지
                 move_decision_needed = 0;
             }
 
@@ -209,7 +196,6 @@ void Alarm_Process(void) {
         case STATE_WAIT_FOR_RAIN:
             Motor_Stop();
 
-            // 경과 시간 표시 추가
             Time_Format(*p_elapsed_seconds, time_str);
             sprintf(lcd_buffer, "Time: %s", time_str);
             LCD_ShowString(20, 20, (u8*)lcd_buffer, BLACK, YELLOW);
@@ -243,9 +229,9 @@ void Alarm_Process(void) {
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
 
+            // 대기 중에는 센서 체크 타이머 유지 (너무 빠르면 LCD 깜빡임이 심할 수 있음)
             sensor_timer++;
-            if (sensor_timer > 2000) {
-                // ID 교차 적용
+            if (sensor_timer > 1000) { // 조금 더 자주 갱신
                 dist_L = Get_Ultrasonic_Dist(3);
                 dist_C = Get_Ultrasonic_Dist(2);
                 dist_R = Get_Ultrasonic_Dist(1);
