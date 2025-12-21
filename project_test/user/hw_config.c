@@ -131,8 +131,8 @@ void Motor_Configure(void) {
 
 void Motor_Forward(void) {
     // 왼쪽 전진 (반대로: Reset/Set)
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOC, GPIO_Pin_0); 
+    GPIO_SetBits(GPIOB, GPIO_Pin_5);
+    GPIO_ResetBits(GPIOC, GPIO_Pin_0); 
 
     // 오른쪽 전진 (반대로: Reset/Set)
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
@@ -141,8 +141,8 @@ void Motor_Forward(void) {
 
 void Motor_Backward(void) {
     // 왼쪽 후진 (반대로: Set/Reset)
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOC, GPIO_Pin_0); 
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
+    GPIO_SetBits(GPIOC, GPIO_Pin_0); 
 
     // 오른쪽 후진 (반대로: Set/Reset)
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
@@ -151,8 +151,8 @@ void Motor_Backward(void) {
 
 void Motor_TurnLeft(void) {
     // 왼쪽 후진
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
+    GPIO_SetBits(GPIOC, GPIO_Pin_0);
 
     // 오른쪽 전진
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
@@ -161,8 +161,8 @@ void Motor_TurnLeft(void) {
 
 void Motor_TurnRight(void) {
     // 왼쪽 전진
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOC, GPIO_Pin_0);
+    GPIO_SetBits(GPIOB, GPIO_Pin_5);
+    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
 
     // 오른쪽 후진
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
@@ -171,8 +171,8 @@ void Motor_TurnRight(void) {
 
 void Motor_Stop(void) {
     // 모두 정지 (전부 Reset)
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
+    GPIO_SetBits(GPIOB, GPIO_Pin_5);
+    GPIO_SetBits(GPIOC, GPIO_Pin_0);
     GPIO_ResetBits(GPIOB, GPIO_Pin_7 | GPIO_Pin_8);
 }
 
