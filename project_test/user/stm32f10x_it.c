@@ -81,20 +81,14 @@ void USART2_IRQHandler(void) {
 void EXTI1_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {
-            // 빗물 대기 모드로 전환
             *p_alarm_state = STATE_WAIT_FOR_RAIN;
-
-            // 터치 센서 비활성화
             Sensor_Mode_WaitRain();
-
             USART2_SendString("\r\nTouch Detected! Waiting for rain...\r\n");
         }
         EXTI_ClearITPendingBit(EXTI_Line1);
     }
 }
 
-// [수정] 빗물 감지 인터럽트는 사용하지 않으므로 비워둠
 void ADC1_2_IRQHandler(void) {
-    // 폴링 방식으로 변경되었으므로 핸들러 내용은 비움
     ADC_ClearITPendingBit(ADC1, ADC_IT_AWD);
 }

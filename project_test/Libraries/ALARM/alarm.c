@@ -28,6 +28,14 @@ uint32_t reveille_beats[] = {
     100, 100, 100, 100, 200
 };
 
+// [추가] 시간 포맷 헬퍼 함수
+void Time_Format(uint32_t total_seconds, char* buffer) {
+    uint32_t h = total_seconds / 3600;
+    uint32_t m = (total_seconds % 3600) / 60;
+    uint32_t s = total_seconds % 60;
+    sprintf(buffer, "%02d:%02d:%02d", (int)h, (int)m, (int)s);
+}
+
 static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
     for (uint32_t i = 0; i < duration; i++) {
         GPIO_SetBits(GPIOB, GPIO_Pin_0);
@@ -67,7 +75,7 @@ void Alarm_Start(uint16_t seconds) {
         *p_elapsed_seconds = 0;
 
         Sensor_Mode_Reset();
-        Motor_Stop(); // 알람 설정시 모터 정지
+        Motor_Stop();
 
         LCD_Clear(WHITE);
         LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
@@ -77,21 +85,21 @@ void Alarm_Start(uint16_t seconds) {
 
 void Alarm_Process(void) {
     char lcd_buffer[30];
+    char time_str[20];
     static int32_t last_sec = -1;
     static AlarmState last_state = STATE_IDLE;
     static uint32_t stability_count = 0;
 
-    // [수정 1] 소리 재생 빈도 조절을 위한 카운터 변수 추가
-    static uint32_t sound_tick = 0;
+    // [수정] 3초 주행 로직을 위한 변수
+    static uint32_t last_scan_time = 0;
+    static uint8_t scan_flag = 0;
 
-    // 초음파 센서 변수
     static uint32_t dist_L = 0, dist_C = 0, dist_R = 0;
     static uint32_t sensor_timer = 0;
 
-    // 장애물 인식 거리 (cm)
     const uint32_t OBS_THRESHOLD = 25;
 
-    // 상태 변경 시 화면 초기화 (기존과 동일)
+    // 상태 변경 시 화면 초기화
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
@@ -105,6 +113,8 @@ void Alarm_Process(void) {
         }
         else if (*p_alarm_state == STATE_ALARM_ACTIVE) {
              LCD_Clear(RED);
+             last_scan_time = 0; // 초기화
+             scan_flag = 1;      // 바로 스캔하도록
         }
         else if (*p_alarm_state == STATE_IDLE) {
              Motor_Stop();
@@ -119,65 +129,80 @@ void Alarm_Process(void) {
         case STATE_COUNTDOWN:
             if (last_sec != *p_countdown_seconds) {
                 last_sec = *p_countdown_seconds;
-                sprintf(lcd_buffer, "Rem: %02d sec", (int)last_sec);
-                LCD_ShowString(40, 130, (u8*)lcd_buffer, BLUE, WHITE);
+                // [요청] HH:MM:SS 표시
+                Time_Format(last_sec, time_str);
+                sprintf(lcd_buffer, "Rem: %s", time_str);
+                LCD_ShowString(20, 130, (u8*)lcd_buffer, BLUE, WHITE);
             }
-            GPIO_SetBits(GPIOB, GPIO_Pin_0);
+            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 틱 소리 등 필요시 사용, 여기선 HIGH 유지
             Motor_Stop();
             break;
 
         case STATE_ALARM_ACTIVE:
-            // === 도망가는 알람 모드 (자율주행 개선) ===
-            LCD_ShowString(40, 50, (u8*)"RUNAWAY ALARM!", WHITE, RED);
+            LCD_ShowString(40, 20, (u8*)"RUNAWAY ALARM!", WHITE, RED);
 
-            // [수정 2] 센서 측정 간 간섭 방지 딜레이 추가
-            // 초음파 잔향이 사라질 틈을 주어 정확도 향상
-            dist_L = Get_Ultrasonic_Dist(1);
-            for(volatile int i=0; i<10000; i++);
+            // [요청] 3초마다 바퀴를 멈춰서 검사 후 이동
+            // elapsed_seconds를 기준으로 3초 주기 체크
 
-            dist_C = Get_Ultrasonic_Dist(2);
-            for(volatile int i=0; i<10000; i++);
-
-            dist_R = Get_Ultrasonic_Dist(3);
-
-            sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
-            LCD_ShowString(20, 110, (u8*)lcd_buffer, YELLOW, RED);
-
-            // [수정 3] 주행 로직
-            // 값이 0인 경우는 센서 오류거나 허공이므로 제외하고 판단
-            if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
-                Motor_Backward(); // 후진
-                LCD_ShowString(100, 140, (u8*)"BACKWARD", YELLOW, RED);
-            }
-            else if (dist_L > 0 && dist_L < OBS_THRESHOLD) {
-                Motor_TurnRight(); // 왼쪽 장애물 -> 우회전
-                LCD_ShowString(100, 140, (u8*)"RIGHT   ", YELLOW, RED);
-            }
-            else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
-                Motor_TurnLeft(); // 오른쪽 장애물 -> 좌회전
-                LCD_ShowString(100, 140, (u8*)"LEFT    ", YELLOW, RED);
-            }
-            else {
-                Motor_Forward(); // 장애물 없음 -> 전진
-                LCD_ShowString(100, 140, (u8*)"FORWARD ", WHITE, RED);
+            // 3초 주기가 돌아왔는지 확인 (0, 3, 6, 9초 ...)
+            if ((*p_elapsed_seconds % 3 == 0) && (*p_elapsed_seconds != last_scan_time)) {
+                scan_flag = 1;
+                last_scan_time = *p_elapsed_seconds;
             }
 
-            // [수정 4] 소리 재생 빈도 조절
-            // 매번 소리를 내면 로봇이 멈칫거리거나 계속 돕니다.
-            // 5번 루프 돌 때 1번만 소리를 내서 주행 반응성을 높입니다.
-            sound_tick++;
-            if (sound_tick > 5) {
-                Play_Reveille();
-                sound_tick = 0;
+            if (scan_flag) {
+                // 1. 멈춤
+                Motor_Stop();
+                LCD_ShowString(40, 50, (u8*)"STOP & SCAN... ", YELLOW, RED);
+
+                // 2. 센서 측정
+                dist_L = Get_Ultrasonic_Dist(1);
+                for(volatile int i=0; i<5000; i++);
+                dist_C = Get_Ultrasonic_Dist(2);
+                for(volatile int i=0; i<5000; i++);
+                dist_R = Get_Ultrasonic_Dist(3);
+
+                // 화면 갱신
+                sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
+                LCD_ShowString(20, 80, (u8*)lcd_buffer, YELLOW, RED);
+
+                // 3. 판단 및 방향 설정 (영어 출력)
+                if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
+                    LCD_ShowString(20, 110, (u8*)"Obstacle: Front", WHITE, RED);
+                    LCD_ShowString(20, 140, (u8*)"Action: Go Back", WHITE, RED);
+                    Motor_Backward();
+                }
+                else if (dist_L > 0 && dist_L < OBS_THRESHOLD) {
+                    LCD_ShowString(20, 110, (u8*)"Obstacle: Left ", WHITE, RED);
+                    LCD_ShowString(20, 140, (u8*)"Action: Turn R ", WHITE, RED);
+                    Motor_TurnRight();
+                }
+                else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
+                    LCD_ShowString(20, 110, (u8*)"Obstacle: Right", WHITE, RED);
+                    LCD_ShowString(20, 140, (u8*)"Action: Turn L ", WHITE, RED);
+                    Motor_TurnLeft();
+                }
+                else {
+                    LCD_ShowString(20, 110, (u8*)"Path Clear     ", WHITE, RED);
+                    LCD_ShowString(20, 140, (u8*)"Action: Forward", WHITE, RED);
+                    Motor_Forward();
+                }
+
+                scan_flag = 0; // 스캔 완료, 다음 3초까지 현재 모터 상태 유지
             }
+
+            // [요청] 소리는 계속 울림
+            Play_Reveille();
             break;
 
         case STATE_WAIT_FOR_RAIN:
+            // [요청] 이 상태에서도 바퀴는 멈추고 부저는 울림
             Motor_Stop();
+
             {
                 uint16_t rain_val = (uint16_t)ADC_Value[0];
-                sprintf(lcd_buffer, "Rain: %04d", rain_val);
-                LCD_ShowString(40, 150, (u8*)lcd_buffer, BLACK, YELLOW);
+                sprintf(lcd_buffer, "Rain Sensor: %04d", rain_val);
+                LCD_ShowString(20, 150, (u8*)lcd_buffer, BLACK, YELLOW);
 
                 if (stability_count < 10) stability_count++;
                 else {
@@ -186,21 +211,18 @@ void Alarm_Process(void) {
                         TIM_Cmd(TIM2, DISABLE);
                     }
                 }
-
-                // 빗물 대기 중에도 소리는 띄엄띄엄 (선택 사항)
-                sound_tick++;
-                if (sound_tick > 10) {
-                    Play_Reveille();
-                    sound_tick = 0;
-                }
             }
+            // [요청] 부저 울림 추가
+            Play_Reveille();
             break;
 
         case STATE_ALARM_STOPPED:
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
-            sprintf(lcd_buffer, "Stop: %d sec", (int)*p_elapsed_seconds);
-            LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
+
+            Time_Format(*p_elapsed_seconds, time_str);
+            sprintf(lcd_buffer, "Total: %s", time_str);
+            LCD_ShowString(20, 100, (u8*)lcd_buffer, BLUE, WHITE);
             break;
 
         case STATE_IDLE:
@@ -238,10 +260,11 @@ void Alarm_Reset(void) {
     *p_countdown_seconds = 0;
     TIM_Cmd(TIM2, DISABLE);
     GPIO_SetBits(GPIOB, GPIO_Pin_0);
-    Motor_Stop(); // 리셋 시 모터 정지
+    Motor_Stop();
 
     Sensor_Mode_Reset();
 
     LCD_Clear(WHITE);
+    // 초기화면 메시지 (선택 사항)
     LCD_ShowString(40, 100, (u8*)"System Ready", BLUE, WHITE);
 }

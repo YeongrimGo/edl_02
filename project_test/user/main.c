@@ -16,7 +16,7 @@ int main(void) {
     RCC_Configure();
     GPIO_Configure();
     Ultrasonic_Configure();
-    Motor_Configure(); // [추가] 모터 핀 초기화
+    Motor_Configure();
     NVIC_Configure();
     ADC_Configure();
     DMA_Configure();
@@ -28,15 +28,21 @@ int main(void) {
     Alarm_Init();
     Alarm_Reset();
 
-    USART2_SendString("System Ready with Auto Drive!\r\n");
+    // [요청] 블루투스 연결 완료 메시지 (영어)
+    USART2_SendString("\r\nBluetooth Connected. Please send the alarm time in seconds.\r\n");
 
     while (1) {
         Alarm_Process();
 
         if (Alarm_GetState() == STATE_ALARM_STOPPED) {
             uint32_t final_time = Alarm_GetElapsedSeconds();
-            char report[60];
-            sprintf(report, "\r\n[STOP] Duration: %d sec\r\n", (int)final_time);
+            char time_str[20];
+            char report[80];
+
+            // [요청] 00시 00분 00초 형식으로 변환
+            Time_Format(final_time, time_str);
+
+            sprintf(report, "\r\n[STOP] Duration: %s\r\n", time_str);
             USART2_SendString(report);
 
             for(volatile int i=0; i<5000000; i++);
