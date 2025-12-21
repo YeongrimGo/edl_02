@@ -14,9 +14,6 @@ static void Delay_us(uint32_t us) {
     while (count--) { __NOP(); }
 }
 
-// RCC_Configure, GPIO_Configure, Ultrasonic_Configure, Motor_Configure 함수는 기존과 동일하게 유지...
-// (분량 관계상 변경된 Motor 함수만 집중적으로 표시합니다. 위쪽 설정 함수들은 원래 코드를 그대로 쓰세요)
-
 void RCC_Configure(void) {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
@@ -24,22 +21,29 @@ void RCC_Configure(void) {
 }
 
 void GPIO_Configure(void) {
-    // 기존 코드와 동일
     GPIO_InitTypeDef GPIO_InitStructure;
+
+    // [중요] PB4를 일반 GPIO로 쓰기 위해 JTAG 비활성화 (SWD는 유지하려면 SWJ_NOJTAG 사용, 완전 끄려면 JTAGDisable)
+    // 여기서는 안전하게 JTAG-DP Disabled and SW-DP Enabled로 설정합니다.
+    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN; GPIO_Init(GPIOA, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; GPIO_Init(GPIOA, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9; GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP; GPIO_Init(GPIOA, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; GPIO_Init(GPIOA, &GPIO_InitStructure);
+
     GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE);
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5; GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP; GPIO_Init(GPIOD, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; GPIO_Init(GPIOD, &GPIO_InitStructure);
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; GPIO_Init(GPIOB, &GPIO_InitStructure);
     GPIO_SetBits(GPIOB, GPIO_Pin_0);
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD; GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
 void Ultrasonic_Configure(void) {
-    // 기존 코드와 동일
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; GPIO_Init(GPIOA, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5; GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; GPIO_Init(GPIOA, &GPIO_InitStructure);
@@ -53,20 +57,20 @@ void Ultrasonic_Configure(void) {
 
 void Motor_Configure(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
-    // IN1(PB5), IN2(PB6), IN3(PB7), IN4(PB8)
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8;
+    // IN1(PB5), IN2(PB4), IN3(PB7), IN4(PB8) -> PB6에서 PB4로 변경됨
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_4 | GPIO_Pin_7 | GPIO_Pin_8;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
     Motor_Stop();
 }
 
-// [수정] 모터 동작 로직 개선
+// [수정] 모터 동작 로직 (PB6 -> PB4 반영)
 
 void Motor_Forward(void) {
     // 왼쪽 바퀴 전진 (IN1=0, IN2=1)
     GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOB, GPIO_Pin_6);
+    GPIO_SetBits(GPIOB, GPIO_Pin_4); // PB6 -> PB4
     // 오른쪽 바퀴 전진 (IN3=0, IN4=1)
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
     GPIO_SetBits(GPIOB, GPIO_Pin_8);
@@ -75,46 +79,43 @@ void Motor_Forward(void) {
 void Motor_Backward(void) {
     // 왼쪽 바퀴 후진 (IN1=1, IN2=0)
     GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_6);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_4); // PB6 -> PB4
     // 오른쪽 바퀴 후진 (IN3=1, IN4=0)
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
     GPIO_ResetBits(GPIOB, GPIO_Pin_8);
 }
 
-// [중요 수정] TurnLeft: 왼쪽 바퀴 후진 + 오른쪽 바퀴 전진
 void Motor_TurnLeft(void) {
     // 왼쪽: 후진 (제자리 회전을 위해)
     GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_6);
+    GPIO_ResetBits(GPIOB, GPIO_Pin_4); // PB6 -> PB4
 
-    // 오른쪽: 전진 (기존에는 Stop이었음 -> Forward로 변경)
+    // 오른쪽: 전진
     GPIO_ResetBits(GPIOB, GPIO_Pin_7);
     GPIO_SetBits(GPIOB, GPIO_Pin_8);
 }
 
-// [중요 수정] TurnRight: 왼쪽 바퀴 전진 + 오른쪽 바퀴 후진
 void Motor_TurnRight(void) {
-    // 왼쪽: 전진 (기존에는 Stop이었음 -> Forward로 변경)
+    // 왼쪽: 전진
     GPIO_ResetBits(GPIOB, GPIO_Pin_5);
-    GPIO_SetBits(GPIOB, GPIO_Pin_6);
+    GPIO_SetBits(GPIOB, GPIO_Pin_4); // PB6 -> PB4
 
-    // 오른쪽: 후진 (제자리 회전을 위해)
+    // 오른쪽: 후진
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
     GPIO_ResetBits(GPIOB, GPIO_Pin_8);
 }
 
 void Motor_Stop(void) {
-    GPIO_ResetBits(GPIOB, GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8);
+    // PB6 -> PB4
+    GPIO_ResetBits(GPIOB, GPIO_Pin_5 | GPIO_Pin_4 | GPIO_Pin_7 | GPIO_Pin_8);
 }
 
-// Get_Ultrasonic_Dist, USART 함수 등 나머지는 기존과 동일
 uint32_t Get_Ultrasonic_Dist(uint8_t sensor_id) {
     GPIO_TypeDef* TRIG_PORT;
     uint16_t TRIG_PIN;
     GPIO_TypeDef* ECHO_PORT;
     uint16_t ECHO_PIN;
 
-    // 반전된 센서 매핑 (1 <-> 3)
     switch(sensor_id) {
         case 1:
             TRIG_PORT = GPIOB; TRIG_PIN = GPIO_Pin_10; ECHO_PORT = GPIOB; ECHO_PIN = GPIO_Pin_11;
