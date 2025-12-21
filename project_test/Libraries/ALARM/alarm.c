@@ -160,24 +160,24 @@ void Alarm_Process(void) {
 
                 // (3) 방향 결정 (이미 위에서 읽은 최신 dist 값 사용)
                 if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
-                    LCD_ShowString(20, 110, (u8*)"Obs: Front     ", WHITE, RED);
-                    LCD_ShowString(20, 140, (u8*)"Act: Backward  ", WHITE, RED);
-                    Motor_Backward();
+                    LCD_ShowString(20, 110, (u8*)"Path Clear     ", WHITE, RED);
+                    LCD_ShowString(20, 140, (u8*)"Act: Forward  ", WHITE, RED);
+                    Motor_Forward();
                 }
                 else if (dist_L > 0 && dist_L < OBS_THRESHOLD) {
-                    LCD_ShowString(20, 110, (u8*)"Obs: Left      ", WHITE, RED);
-                    LCD_ShowString(20, 140, (u8*)"Act: Turn Right", WHITE, RED);
-                    Motor_TurnRight();
-                }
-                else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
-                    LCD_ShowString(20, 110, (u8*)"Obs: Right     ", WHITE, RED);
-                    LCD_ShowString(20, 140, (u8*)"Act: Turn Left ", WHITE, RED);
+                    LCD_ShowString(20, 110, (u8*)"Obs: Right      ", WHITE, RED);
+                    LCD_ShowString(20, 140, (u8*)"Act: Turn Left", WHITE, RED);
                     Motor_TurnLeft();
                 }
+                else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
+                    LCD_ShowString(20, 110, (u8*)"Obs: Left     ", WHITE, RED);
+                    LCD_ShowString(20, 140, (u8*)"Act: Turn Right ", WHITE, RED);
+                    Motor_TurnRight();
+                }
                 else {
-                    LCD_ShowString(20, 110, (u8*)"Path Clear     ", WHITE, RED);
-                    LCD_ShowString(20, 140, (u8*)"Act: Forward   ", WHITE, RED);
-                    Motor_Forward();
+                    LCD_ShowString(20, 110, (u8*)"Obs: Forward     ", WHITE, RED);
+                    LCD_ShowString(20, 140, (u8*)"Act: Backward   ", WHITE, RED);
+                    Motor_Backward();
                 }
 
                 last_decision_time = *p_elapsed_seconds; // 이번 주기는 처리 완료
