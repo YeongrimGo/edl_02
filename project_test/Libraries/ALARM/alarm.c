@@ -16,7 +16,7 @@ volatile uint32_t* p_countdown_seconds = &countdown_seconds;
 volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
 volatile AlarmState* p_alarm_state = &alarm_state;
 
-// --- 기상나팔 (빠른 반응을 위해 비트 길이를 조금 줄임) ---
+// --- 기상나팔 ---
 #define NOTE_G  3000
 #define NOTE_C  2250
 #define NOTE_E  1800
@@ -25,10 +25,9 @@ uint16_t reveille_notes[] = {
     NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G
 };
 uint32_t reveille_beats[] = {
-    50, 50, 50, 50, 100 // 비트 길이를 줄여 센서 업데이트 주기를 확보
+    50, 50, 50, 50, 100
 };
 
-// [수정] 00분 00초 포맷 (시간 제외)
 void Time_Format(uint32_t total_seconds, char* buffer) {
     uint32_t m = total_seconds / 60;
     uint32_t s = total_seconds % 60;
@@ -42,7 +41,6 @@ static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
         GPIO_ResetBits(GPIOB, GPIO_Pin_0);
         for (volatile int d = 0; d < pitch; d++);
 
-        // 알람이 꺼지면 즉시 리턴
         if (*p_alarm_state == STATE_ALARM_STOPPED || *p_alarm_state == STATE_IDLE) return;
     }
 }
@@ -73,10 +71,8 @@ void Alarm_Start(uint16_t seconds) {
         *p_countdown_seconds = seconds;
         *p_alarm_state = STATE_COUNTDOWN;
         *p_elapsed_seconds = 0;
-
         Sensor_Mode_Reset();
         Motor_Stop();
-
         LCD_Clear(WHITE);
         LCD_ShowString(40, 100, (u8*)"Alarm Set", BLUE, WHITE);
         TIM_Cmd(TIM2, ENABLE);
@@ -89,13 +85,10 @@ void Alarm_Process(void) {
     static int32_t last_sec = -1;
     static AlarmState last_state = STATE_IDLE;
     static uint32_t stability_count = 0;
-
-    // 자율주행 관련 변수
     static uint32_t last_decision_time = 0;
     static uint32_t dist_L = 0, dist_C = 0, dist_R = 0;
     const uint32_t OBS_THRESHOLD = 25;
 
-    // 상태 변경 시 화면 초기화 및 변수 리셋
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
@@ -131,34 +124,23 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_ACTIVE:
-            // 1. 화면 표시 (항상 표시)
             LCD_ShowString(40, 20, (u8*)"RUNAWAY ALARM!", WHITE, RED);
-
-            // 경과 시간 표시 (00분 00초)
             Time_Format(*p_elapsed_seconds, time_str);
             sprintf(lcd_buffer, "Time: %s", time_str);
             LCD_ShowString(40, 200, (u8*)lcd_buffer, YELLOW, RED);
 
-            // 2. 센서값 실시간 업데이트 (지연 없이 매번 읽음)
-            // [수정] 속도 개선을 위해 불필요한 for 루프 제거
-            dist_L = Get_Ultrasonic_Dist(1);
+            // [수정] 센서 위치 반전 (1번을 R, 3번을 L로 매핑)
+            dist_R = Get_Ultrasonic_Dist(1); // 기존 L -> R로 변경
             dist_C = Get_Ultrasonic_Dist(2);
-            dist_R = Get_Ultrasonic_Dist(3);
+            dist_L = Get_Ultrasonic_Dist(3); // 기존 R -> L로 변경
 
             sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
             LCD_ShowString(20, 80, (u8*)lcd_buffer, YELLOW, RED);
 
-            // 3. 자율주행 로직 (2초 주기)
-            // 현재 시간이 짝수 초(0, 2, 4...)이고, 아직 이번 초에 결정을 안 내렸다면 실행
             if ((*p_elapsed_seconds % 2 == 0) && (*p_elapsed_seconds != last_decision_time)) {
-
-                // (1) 바퀴 정지
                 Motor_Stop();
 
-                // (2) 아주 잠깐 대기 (센서 안정화 필요 시, 없어도 됨)
-                // for(volatile int k=0; k<1000; k++);
-
-                // (3) 방향 결정 (이미 위에서 읽은 최신 dist 값 사용)
+                // 로직은 그대로 사용 (L, R 변수가 위에서 바뀌었으므로 화면과 동작 일치됨)
                 if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
                     LCD_ShowString(20, 110, (u8*)"Obs: Front     ", WHITE, RED);
                     LCD_ShowString(20, 140, (u8*)"Act: Backward  ", WHITE, RED);
@@ -179,18 +161,13 @@ void Alarm_Process(void) {
                     LCD_ShowString(20, 140, (u8*)"Act: Forward   ", WHITE, RED);
                     Motor_Forward();
                 }
-
-                last_decision_time = *p_elapsed_seconds; // 이번 주기는 처리 완료
+                last_decision_time = *p_elapsed_seconds;
             }
-
-            // 소리 재생 (루프를 짧게 끊어쳐서 센서 업데이트 자주 함)
             Play_Reveille();
             break;
 
         case STATE_WAIT_FOR_RAIN:
             Motor_Stop();
-
-            // 경과 시간 표시
             Time_Format(*p_elapsed_seconds, time_str);
             sprintf(lcd_buffer, "Time: %s", time_str);
             LCD_ShowString(40, 110, (u8*)lcd_buffer, BLACK, YELLOW);
@@ -214,7 +191,6 @@ void Alarm_Process(void) {
         case STATE_ALARM_STOPPED:
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
-
             Time_Format(*p_elapsed_seconds, time_str);
             sprintf(lcd_buffer, "Total: %s", time_str);
             LCD_ShowString(20, 100, (u8*)lcd_buffer, BLUE, WHITE);
@@ -224,10 +200,10 @@ void Alarm_Process(void) {
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
 
-            // IDLE 상태에서도 센서 빠르게 확인
-            dist_L = Get_Ultrasonic_Dist(1);
+            // [수정] IDLE 상태에서도 센서 반전 적용
+            dist_R = Get_Ultrasonic_Dist(1);
             dist_C = Get_Ultrasonic_Dist(2);
-            dist_R = Get_Ultrasonic_Dist(3);
+            dist_L = Get_Ultrasonic_Dist(3);
 
             sprintf(lcd_buffer, "L:%3d", (int)dist_L);
             LCD_ShowString(20, 120, (u8*)lcd_buffer, BLUE, WHITE);
@@ -239,13 +215,11 @@ void Alarm_Process(void) {
             LCD_ShowString(200, 120, (u8*)lcd_buffer, BLUE, WHITE);
 
             LCD_ShowString(60, 150, (u8*)"[Waiting...]", BLACK, WHITE);
-
-            // 약간의 딜레이만 줌 (화면 깜빡임 방지용)
             for(volatile int i=0; i<50000; i++);
             break;
     }
 }
-
+// 나머지 함수들은 파일 끝부분에 그대로 유지
 AlarmState Alarm_GetState(void) { return *p_alarm_state; }
 uint32_t Alarm_GetElapsedSeconds(void) { return *p_elapsed_seconds; }
 
@@ -256,9 +230,7 @@ void Alarm_Reset(void) {
     TIM_Cmd(TIM2, DISABLE);
     GPIO_SetBits(GPIOB, GPIO_Pin_0);
     Motor_Stop();
-
     Sensor_Mode_Reset();
-
     LCD_Clear(WHITE);
     LCD_ShowString(40, 100, (u8*)"System Ready", BLUE, WHITE);
 }
