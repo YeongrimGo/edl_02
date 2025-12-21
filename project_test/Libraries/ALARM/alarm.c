@@ -28,12 +28,11 @@ uint32_t reveille_beats[] = {
     100, 100, 100, 100, 200
 };
 
-// [추가] 시간 포맷 헬퍼 함수
+// [수정] 00시는 빼고 00분 00초 (MM:SS) 형식으로 변경
 void Time_Format(uint32_t total_seconds, char* buffer) {
-    uint32_t h = total_seconds / 3600;
-    uint32_t m = (total_seconds % 3600) / 60;
+    uint32_t m = total_seconds / 60;
     uint32_t s = total_seconds % 60;
-    sprintf(buffer, "%02d:%02d:%02d", (int)h, (int)m, (int)s);
+    sprintf(buffer, "%02d:%02d", (int)m, (int)s);
 }
 
 static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
@@ -90,16 +89,17 @@ void Alarm_Process(void) {
     static AlarmState last_state = STATE_IDLE;
     static uint32_t stability_count = 0;
 
-    // [수정] 3초 주행 로직을 위한 변수
-    static uint32_t last_scan_time = 0;
-    static uint8_t scan_flag = 0;
+    // 이동 및 센서 스캔 관련 변수
+    static uint32_t last_move_check_time = 0;
+    static uint8_t move_decision_needed = 0;
+    static uint32_t real_time_sensor_counter = 0; // 실시간 업데이트용 카운터
 
     static uint32_t dist_L = 0, dist_C = 0, dist_R = 0;
     static uint32_t sensor_timer = 0;
 
     const uint32_t OBS_THRESHOLD = 25;
 
-    // 상태 변경 시 화면 초기화
+    // 상태 변경 감지 및 초기화
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
@@ -113,8 +113,8 @@ void Alarm_Process(void) {
         }
         else if (*p_alarm_state == STATE_ALARM_ACTIVE) {
              LCD_Clear(RED);
-             last_scan_time = 0; // 초기화
-             scan_flag = 1;      // 바로 스캔하도록
+             last_move_check_time = 0;
+             move_decision_needed = 1; // 시작하자마자 판단하도록
         }
         else if (*p_alarm_state == STATE_IDLE) {
              Motor_Stop();
@@ -129,75 +129,90 @@ void Alarm_Process(void) {
         case STATE_COUNTDOWN:
             if (last_sec != *p_countdown_seconds) {
                 last_sec = *p_countdown_seconds;
-                // [요청] HH:MM:SS 표시
                 Time_Format(last_sec, time_str);
                 sprintf(lcd_buffer, "Rem: %s", time_str);
                 LCD_ShowString(20, 130, (u8*)lcd_buffer, BLUE, WHITE);
             }
-            GPIO_SetBits(GPIOB, GPIO_Pin_0); // 부저 틱 소리 등 필요시 사용, 여기선 HIGH 유지
+            GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
             break;
 
         case STATE_ALARM_ACTIVE:
-            LCD_ShowString(40, 20, (u8*)"RUNAWAY ALARM!", WHITE, RED);
+            // 1. 경과 시간 표시 (00분 00초)
+            Time_Format(*p_elapsed_seconds, time_str);
+            sprintf(lcd_buffer, "Time: %s", time_str);
+            LCD_ShowString(20, 20, (u8*)lcd_buffer, WHITE, RED);
 
-            // [요청] 3초마다 바퀴를 멈춰서 검사 후 이동
-            // elapsed_seconds를 기준으로 3초 주기 체크
-
-            // 3초 주기가 돌아왔는지 확인 (0, 3, 6, 9초 ...)
-            if ((*p_elapsed_seconds % 3 == 0) && (*p_elapsed_seconds != last_scan_time)) {
-                scan_flag = 1;
-                last_scan_time = *p_elapsed_seconds;
-            }
-
-            if (scan_flag) {
-                // 1. 멈춤
-                Motor_Stop();
-                LCD_ShowString(40, 50, (u8*)"STOP & SCAN... ", YELLOW, RED);
-
-                // 2. 센서 측정
-                dist_L = Get_Ultrasonic_Dist(1);
-                for(volatile int i=0; i<5000; i++);
+            // 2. [실시간] 센서 값 업데이트 (느리지 않게, 매번 혹은 자주 수행)
+            // 소리 재생 사이사이에 호출됨.
+            real_time_sensor_counter++;
+            // 너무 자주하면 부저가 끊길 수 있으니 약간의 텀을 주되 사용자에게는 '실시간' 처럼 보이게 함
+            if (real_time_sensor_counter > 5) {
+                // 센서 ID 교차 적용 (3=L, 1=R)
+                dist_L = Get_Ultrasonic_Dist(3);
                 dist_C = Get_Ultrasonic_Dist(2);
-                for(volatile int i=0; i<5000; i++);
-                dist_R = Get_Ultrasonic_Dist(3);
+                dist_R = Get_Ultrasonic_Dist(1);
 
-                // 화면 갱신
                 sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
                 LCD_ShowString(20, 80, (u8*)lcd_buffer, YELLOW, RED);
 
-                // 3. 판단 및 방향 설정 (영어 출력)
-                if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
-                    LCD_ShowString(20, 110, (u8*)"Obstacle: Front", WHITE, RED);
-                    LCD_ShowString(20, 140, (u8*)"Action: Go Back", WHITE, RED);
-                    Motor_Backward();
-                }
-                else if (dist_L > 0 && dist_L < OBS_THRESHOLD) {
-                    LCD_ShowString(20, 110, (u8*)"Obstacle: Left ", WHITE, RED);
-                    LCD_ShowString(20, 140, (u8*)"Action: Turn R ", WHITE, RED);
-                    Motor_TurnRight();
-                }
-                else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
-                    LCD_ShowString(20, 110, (u8*)"Obstacle: Right", WHITE, RED);
-                    LCD_ShowString(20, 140, (u8*)"Action: Turn L ", WHITE, RED);
-                    Motor_TurnLeft();
-                }
-                else {
-                    LCD_ShowString(20, 110, (u8*)"Path Clear     ", WHITE, RED);
-                    LCD_ShowString(20, 140, (u8*)"Action: Forward", WHITE, RED);
-                    Motor_Forward();
-                }
-
-                scan_flag = 0; // 스캔 완료, 다음 3초까지 현재 모터 상태 유지
+                real_time_sensor_counter = 0;
             }
 
-            // [요청] 소리는 계속 울림
+            // 3. [2초 주기] 이동 방향 결정 로직
+            // 2초마다 트리거
+            if ((*p_elapsed_seconds % 2 == 0) && (*p_elapsed_seconds != last_move_check_time)) {
+                move_decision_needed = 1;
+                last_move_check_time = *p_elapsed_seconds;
+            }
+
+            if (move_decision_needed) {
+                // (1) 일단 멈춤
+                Motor_Stop();
+                LCD_ShowString(20, 110, (u8*)"Scan & Decide..", YELLOW, RED);
+
+                // (2) 멈춘 상태에서 정확한 판단을 위해 한 번 더 센서 읽기 (선택사항, 위 실시간 값 써도 됨)
+                // 확실하게 하기 위해 읽음
+                dist_L = Get_Ultrasonic_Dist(3);
+                dist_C = Get_Ultrasonic_Dist(2);
+                dist_R = Get_Ultrasonic_Dist(1);
+
+                // (3) 방향 판단 및 이동 시작
+                if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
+                    LCD_ShowString(20, 110, (u8*)"Go Back...     ", WHITE, RED);
+                    // hw_config에서 Backward가 '전진'이므로, '후진' 하려면 Forward 호출
+                    Motor_Forward();
+                }
+                else if (dist_L > 0 && dist_L < OBS_THRESHOLD) {
+                    LCD_ShowString(20, 110, (u8*)"Turn Right...  ", WHITE, RED);
+                    // hw_config에서 TurnLeft가 '우회전'
+                    Motor_TurnLeft();
+                }
+                else if (dist_R > 0 && dist_R < OBS_THRESHOLD) {
+                    LCD_ShowString(20, 110, (u8*)"Turn Left...   ", WHITE, RED);
+                    // hw_config에서 TurnRight가 '좌회전'
+                    Motor_TurnRight();
+                }
+                else {
+                    LCD_ShowString(20, 110, (u8*)"Go Forward...  ", WHITE, RED);
+                    // 평소 주행: hw_config에서 Backward가 '전진'
+                    Motor_Backward();
+                }
+
+                // 결정 완료, 다음 2초가 될 때까지 이 상태 유지
+                move_decision_needed = 0;
+            }
+
             Play_Reveille();
             break;
 
         case STATE_WAIT_FOR_RAIN:
-            // [요청] 이 상태에서도 바퀴는 멈추고 부저는 울림
             Motor_Stop();
+
+            // 경과 시간 표시 추가
+            Time_Format(*p_elapsed_seconds, time_str);
+            sprintf(lcd_buffer, "Time: %s", time_str);
+            LCD_ShowString(20, 20, (u8*)lcd_buffer, BLACK, YELLOW);
 
             {
                 uint16_t rain_val = (uint16_t)ADC_Value[0];
@@ -212,7 +227,6 @@ void Alarm_Process(void) {
                     }
                 }
             }
-            // [요청] 부저 울림 추가
             Play_Reveille();
             break;
 
@@ -231,9 +245,10 @@ void Alarm_Process(void) {
 
             sensor_timer++;
             if (sensor_timer > 2000) {
-                dist_L = Get_Ultrasonic_Dist(1);
+                // ID 교차 적용
+                dist_L = Get_Ultrasonic_Dist(3);
                 dist_C = Get_Ultrasonic_Dist(2);
-                dist_R = Get_Ultrasonic_Dist(3);
+                dist_R = Get_Ultrasonic_Dist(1);
                 sensor_timer = 0;
 
                 sprintf(lcd_buffer, "L:%3d", (int)dist_L);
@@ -265,6 +280,5 @@ void Alarm_Reset(void) {
     Sensor_Mode_Reset();
 
     LCD_Clear(WHITE);
-    // 초기화면 메시지 (선택 사항)
     LCD_ShowString(40, 100, (u8*)"System Ready", BLUE, WHITE);
 }
