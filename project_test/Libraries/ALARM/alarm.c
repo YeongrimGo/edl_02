@@ -19,11 +19,10 @@ volatile uint32_t* p_countdown_seconds = &countdown_seconds;
 volatile uint32_t* p_elapsed_seconds = &elapsed_seconds;
 volatile AlarmState* p_alarm_state = &alarm_state;
 
-// --- 기상나팔 설정 (소리 증폭/반응속도 최적화) ---
-// [수정] 값을 줄여 주파수를 높임 (약 2kHz~4kHz 대역으로 이동하여 소리가 더 날카롭고 크게 들림)
-#define NOTE_G  1500  // 기존 3000 -> 1500 (약 2.4kHz)
-#define NOTE_C  1100  // 기존 2250 -> 1100 (약 3.2kHz)
-#define NOTE_E  900   // 기존 1800 -> 900  (약 4.0kHz)
+// --- 기상나팔 설정 (반응속도 최적화) ---
+#define NOTE_G  3000
+#define NOTE_C  2250
+#define NOTE_E  1800
 
 uint16_t reveille_notes[] = { NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G };
 // [수정] 박자를 짧게 줄여 부저가 울리는 동안 센서가 멈추는 시간을 최소화
@@ -40,10 +39,7 @@ void Time_Format(uint32_t total_seconds, char* buffer) {
 
 // [수정] 부저 소리 출력 (Loop 중단 조건 추가)
 static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
-    // 소리를 더 명확하게 하기 위해 지속 시간을 약간 보정 (* 2)
-    uint32_t real_duration = duration * 2;
-
-    for (uint32_t i = 0; i < real_duration; i++) {
+    for (uint32_t i = 0; i < duration; i++) {
         GPIO_SetBits(GPIOB, GPIO_Pin_0);
         for (volatile int d = 0; d < pitch; d++);
         GPIO_ResetBits(GPIOB, GPIO_Pin_0);
