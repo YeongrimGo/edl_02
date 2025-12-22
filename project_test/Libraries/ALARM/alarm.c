@@ -130,12 +130,9 @@ void Alarm_Process(void) {
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
-
-            // [수정 요청] 화면 출력 문구 변경 (여러 줄 출력)
-            // X좌표를 10으로 당겨서 긴 문장이 잘리지 않게 함
             LCD_ShowString(10, 40, (u8*)"WAITING FOR WATER...", BLACK, YELLOW);
-            LCD_ShowString(10, 70, (u8*)"GO TO BATHROOM!!", RED, YELLOW);    // 강조를 위해 RED 사용
-            LCD_ShowString(10, 100, (u8*)"DON'T SLEEP AGAIN!!", RED, YELLOW); // 강조를 위해 RED 사용
+            LCD_ShowString(10, 70, (u8*)"GO TO BATHROOM!!", RED, YELLOW);
+            LCD_ShowString(10, 100, (u8*)"DON'T SLEEP AGAIN!!", RED, YELLOW);
 
             stability_count = 0;
             Motor_Stop();
@@ -146,14 +143,17 @@ void Alarm_Process(void) {
         }
         else if (*p_alarm_state == STATE_ALARM_ACTIVE) {
              LCD_Clear(RED);
+             // [수정] 알람 도망 상태 문구 추가
              LCD_ShowString(40, 20, (u8*)"RUNAWAY ALARM!", WHITE, RED);
+             LCD_ShowString(40, 50, (u8*)"Catch the Alarm!", WHITE, RED);   // 추가된 문구 1
+             LCD_ShowString(20, 80, (u8*)"Touch the Sensor!", YELLOW, RED);  // 추가된 문구 2 (강조색)
+
              last_dist_L = 999;
              last_action[0] = '\0';
         }
         else if (*p_alarm_state == STATE_IDLE) {
              Motor_Stop();
              LCD_Clear(WHITE);
-             // [요청 1] IDLE 상태 문구
              LCD_ShowString(20, 50, (u8*)"Wait BT Connect...", BLACK, WHITE);
         }
         last_state = *p_alarm_state;
@@ -162,7 +162,6 @@ void Alarm_Process(void) {
     // 2. 상태별 동작
     switch (*p_alarm_state) {
         case STATE_COUNTDOWN:
-            // [요청 3] 초 단위 시간 갱신 (reminder 00:00:00)
             if (last_sec != *p_countdown_seconds) {
                 last_sec = *p_countdown_seconds;
                 Time_Format(last_sec, time_str);
@@ -174,16 +173,21 @@ void Alarm_Process(void) {
             break;
 
         case STATE_ALARM_ACTIVE:
+            // 센서 값은 읽지만, LCD에는 표시하지 않음
             dist_L = Get_Ultrasonic_Dist(1);
             dist_C = Get_Ultrasonic_Dist(2);
             dist_R = Get_Ultrasonic_Dist(3);
 
+            // [삭제됨] 초음파 센서 값 출력 코드 제거
+            /*
             if(dist_L != last_dist_L || dist_C != last_dist_C || dist_R != last_dist_R) {
                 sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
                 LCD_ShowString(20, 80, (u8*)lcd_buffer, YELLOW, RED);
                 last_dist_L = dist_L; last_dist_C = dist_C; last_dist_R = dist_R;
             }
+            */
 
+            // 모터 제어 로직
             if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
                 sprintf(current_action, "Action: Go Back");
                 Motor_Backward();
@@ -201,6 +205,7 @@ void Alarm_Process(void) {
                 Motor_Forward();
             }
 
+            // [유지] Action 상태 표시 (Y좌표 140)
             if (strcmp(current_action, last_action) != 0) {
                 LCD_ShowString(20, 140, (u8*)current_action, WHITE, RED);
                 strcpy(last_action, current_action);
@@ -216,9 +221,7 @@ void Alarm_Process(void) {
                 static uint16_t last_rain_val = 9999;
 
                 if (abs((int)rain_val - (int)last_rain_val) > 50) {
-                    // [수정 요청] Rain Sensor -> Water Sensor 로 문구 변경
                     sprintf(lcd_buffer, "Water Sensor: %04d", rain_val);
-                    // 위쪽 경고 문구들과 겹치지 않게 Y좌표 150 유지
                     LCD_ShowString(20, 150, (u8*)lcd_buffer, BLACK, YELLOW);
                     last_rain_val = rain_val;
                 }
@@ -250,7 +253,6 @@ void Alarm_Process(void) {
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
 
-            // [요청 1] 센서 값들을 세로로(밑으로) 배치
             sensor_timer++;
             if (sensor_timer > 500) {
                 dist_L = Get_Ultrasonic_Dist(1);
