@@ -11,7 +11,7 @@
 extern volatile uint32_t ADC_Value[1];
 
 // [추가] 모터 속도 및 상태 제어 변수
-volatile uint16_t motor_speed = 980; // 목표 속도 (0 ~ 1000)
+volatile uint16_t motor_speed = 98; // 목표 속도 (0 ~ 1000)
 volatile int motor_state = 0;        // 0:Stop, 1:Fwd, 2:Back, 3:Left, 4:Right
 
 static void Delay_us(uint32_t us) {
@@ -152,22 +152,22 @@ void Motor_Configure(void) {
 
 void Motor_Forward(void) {
     motor_state = 1;
-    motor_speed = 980; // 요청하신 980
+    motor_speed = 98; // 요청하신 980
 }
 
 void Motor_Backward(void) {
     motor_state = 2;
-    motor_speed = 980;
+    motor_speed = 98;
 }
 
 void Motor_TurnLeft(void) {
     motor_state = 3;
-    motor_speed = 980;
+    motor_speed = 98;
 }
 
 void Motor_TurnRight(void) {
     motor_state = 4;
-    motor_speed = 980;
+    motor_speed = 98;
 }
 
 void Motor_Stop(void) {

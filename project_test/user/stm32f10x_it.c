@@ -29,7 +29,7 @@ void TIM3_IRQHandler(void) {
 
         // 0~1000 카운트 반복
         pwm_count++;
-        if (pwm_count >= 1000) pwm_count = 0;
+        if (pwm_count >= 100) pwm_count = 0;
 
         // PWM 제어 로직 (Count가 Speed보다 작을 때만 ON)
         if (pwm_count < motor_speed) {
@@ -139,7 +139,7 @@ void EXTI1_IRQHandler(void) {
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {
             *p_alarm_state = STATE_WAIT_FOR_RAIN;
             Sensor_Mode_WaitRain();
-            USART2_SendString("\r\nTouch Detected! Waiting for rain...\r\n");
+            USART2_SendString("\r\nTouch Detected! Waiting for water...\r\n");
         }
         EXTI_ClearITPendingBit(EXTI_Line1);
     }
