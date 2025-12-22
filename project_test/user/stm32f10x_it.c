@@ -3,6 +3,7 @@
 #include "stm32f10x_exti.h"
 #include "stm32f10x_tim.h"
 #include "stm32f10x_adc.h"
+#include "stm32f10x_gpio.h" // GPIO 사용을 위해 추가
 #include "alarm.h"
 #include "inc/hw_config.h"
 #include <string.h>
@@ -12,8 +13,64 @@ extern volatile uint32_t* p_countdown_seconds;
 extern volatile uint32_t* p_elapsed_seconds;
 extern volatile AlarmState* p_alarm_state;
 
+// hw_config.c에 정의된 모터 제어 변수 가져오기
+extern volatile uint16_t motor_speed;
+extern volatile int motor_state;
+
 char rx_buffer[50];
 uint8_t rx_index = 0;
+
+// [추가] TIM3 인터럽트 핸들러: 여기서 980 PWM을 구현함
+void TIM3_IRQHandler(void) {
+    static uint16_t pwm_count = 0;
+
+    if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
+        TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+
+        // 0~1000 카운트 반복
+        pwm_count++;
+        if (pwm_count >= 1000) pwm_count = 0;
+
+        // PWM 제어 로직 (Count가 Speed보다 작을 때만 ON)
+        if (pwm_count < motor_speed) {
+            switch (motor_state) {
+                case 1: // Forward
+                    // Left: IN1(PC10)=0, IN2(PC0)=1
+                    GPIO_ResetBits(GPIOC, GPIO_Pin_10); GPIO_SetBits(GPIOC, GPIO_Pin_0);
+                    // Right: IN3(PB7)=0, IN4(PB8)=1
+                    GPIO_ResetBits(GPIOB, GPIO_Pin_7); GPIO_SetBits(GPIOB, GPIO_Pin_8);
+                    break;
+                case 2: // Backward
+                    // Left: IN1(PC10)=1, IN2(PC0)=0
+                    GPIO_SetBits(GPIOC, GPIO_Pin_10); GPIO_ResetBits(GPIOC, GPIO_Pin_0);
+                    // Right: IN3(PB7)=1, IN4(PB8)=0
+                    GPIO_SetBits(GPIOB, GPIO_Pin_7); GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+                    break;
+                case 3: // Turn Left
+                    // Left Backward
+                    GPIO_SetBits(GPIOC, GPIO_Pin_10); GPIO_ResetBits(GPIOC, GPIO_Pin_0);
+                    // Right Stop
+                    GPIO_ResetBits(GPIOB, GPIO_Pin_7); GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+                    break;
+                case 4: // Turn Right
+                    // Left Stop
+                    GPIO_ResetBits(GPIOC, GPIO_Pin_10); GPIO_ResetBits(GPIOC, GPIO_Pin_0);
+                    // Right Backward
+                    GPIO_SetBits(GPIOB, GPIO_Pin_7); GPIO_ResetBits(GPIOB, GPIO_Pin_8);
+                    break;
+                case 0: // Stop
+                default:
+                    GPIO_ResetBits(GPIOC, GPIO_Pin_10 | GPIO_Pin_0);
+                    GPIO_ResetBits(GPIOB, GPIO_Pin_7 | GPIO_Pin_8);
+                    break;
+            }
+        } else {
+            // PWM Off 기간: 모든 핀 끄기
+            GPIO_ResetBits(GPIOC, GPIO_Pin_10 | GPIO_Pin_0);
+            GPIO_ResetBits(GPIOB, GPIO_Pin_7 | GPIO_Pin_8);
+        }
+    }
+}
 
 void TIM2_IRQHandler(void) {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
@@ -77,7 +134,6 @@ void USART2_IRQHandler(void) {
     }
 }
 
-// 터치 센서 (PC1)
 void EXTI1_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {
