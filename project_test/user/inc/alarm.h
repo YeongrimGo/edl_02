@@ -17,5 +17,8 @@ void Alarm_Process(void);
 AlarmState Alarm_GetState(void);
 uint32_t Alarm_GetElapsedSeconds(void);
 void Alarm_Reset(void);
+void Time_Format(uint32_t total_seconds, char* buffer);
+void Alarm_HandleInput(char c);
 
 #endif
+

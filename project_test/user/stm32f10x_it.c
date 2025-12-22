@@ -3,17 +3,15 @@
 #include "stm32f10x_exti.h"
 #include "stm32f10x_tim.h"
 #include "stm32f10x_adc.h"
-#include "alarm.h"
+#include "inc/alarm.h"
 #include "inc/hw_config.h"
+#include "inc/usart_comm.h"
 #include <string.h>
 #include <stdlib.h>
 
 extern volatile uint32_t* p_countdown_seconds;
 extern volatile uint32_t* p_elapsed_seconds;
 extern volatile AlarmState* p_alarm_state;
-
-char rx_buffer[50];
-uint8_t rx_index = 0;
 
 void TIM2_IRQHandler(void) {
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
@@ -56,28 +54,12 @@ void USART2_IRQHandler(void) {
         uint16_t word = USART_ReceiveData(USART2);
         USART_SendData(USART1, word);
 
-        if (rx_index < sizeof(rx_buffer) - 1) {
-            if (word == '\n' || word == '\r') {
-                if (rx_index > 0) {
-                    rx_buffer[rx_index] = '\0';
-                    int received_val = atoi(rx_buffer);
+        Alarm_HandleInput((char)word);
 
-                    if (received_val > 0) {
-                        Alarm_Start((uint16_t)received_val);
-                    }
-                    rx_index = 0;
-                }
-            } else if (word >= '0' && word <= '9') {
-                rx_buffer[rx_index++] = (char)word;
-            }
-        } else {
-            rx_index = 0;
-        }
         USART_ClearITPendingBit(USART2, USART_IT_RXNE);
     }
 }
 
-// 터치 센서 (PC1)
 void EXTI1_IRQHandler(void) {
     if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
         if (*p_alarm_state == STATE_ALARM_ACTIVE) {

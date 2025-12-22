@@ -1,20 +1,15 @@
 #include "inc/hw_config.h"
+#include "inc/motor.h"
+#include "inc/ultrasonic.h"
+#include "inc/usart_comm.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
-#include "stm32f10x_usart.h"
 #include "stm32f10x_exti.h"
 #include "stm32f10x_adc.h"
 #include "stm32f10x_dma.h"
 #include "misc.h"
 
 extern volatile uint32_t ADC_Value[1];
-
-static void Delay_us(uint32_t us) {
-    volatile uint32_t count = us * 12;
-    while (count--) {
-        __NOP();
-    }
-}
 
 void RCC_Configure(void) {
     // GPIOA, GPIOB, GPIOC, GPIOD, AFIO, ADC1, USART1 클럭 활성화
@@ -68,174 +63,6 @@ void GPIO_Configure(void) {
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
-}
-
-void Ultrasonic_Configure(void) {
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    // PA4(Trig), PA5(Echo) - Left
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    // PA6(Trig), PA7(Echo) - Center
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    // PB10(Trig), PB11(Echo) - Right
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-    GPIO_ResetBits(GPIOA, GPIO_Pin_4 | GPIO_Pin_6);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_10);
-}
-
-void Motor_Configure(void)
-{
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC, ENABLE);
-
-    // Left: PC0, PC10
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_10;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-    // Right: PB7, PB8
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_8;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-    // 초기 정지
-    Motor_Stop();
-}
-
-
-// Left: IN1(PC10), IN2(PC0) / Right: IN3(PB7), IN4(PB8)
-// 앞뒤, 좌우 반전 적용된 상태(기존 동작 의미 유지)
-
-void Motor_Forward(void) {
-    // Left: IN1=0, IN2=1
-    GPIO_ResetBits(GPIOC, GPIO_Pin_10);
-    GPIO_SetBits  (GPIOC, GPIO_Pin_0);
-
-    // Right: IN3=0, IN4=1
-    GPIO_ResetBits(GPIOB, GPIO_Pin_7);
-    GPIO_SetBits  (GPIOB, GPIO_Pin_8);
-}
-
-void Motor_Backward(void) {
-    // Left: IN1=1, IN2=0
-    GPIO_SetBits  (GPIOC, GPIO_Pin_10);
-    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
-
-    // Right: IN3=1, IN4=0
-    GPIO_SetBits  (GPIOB, GPIO_Pin_7);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
-}
-
-void Motor_TurnLeft(void) {
-    // Left: backward (IN1=1, IN2=0)
-    GPIO_SetBits  (GPIOC, GPIO_Pin_10);
-    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
-
-    // Right: stop (IN3=0, IN4=0)
-    GPIO_ResetBits(GPIOB, GPIO_Pin_7);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
-}
-
-void Motor_TurnRight(void) {
-    // Left: stop (IN1=0, IN2=0)
-    GPIO_ResetBits(GPIOC, GPIO_Pin_10);
-    GPIO_ResetBits(GPIOC, GPIO_Pin_0);
-
-    // Right: backward (IN3=1, IN4=0)
-    GPIO_SetBits  (GPIOB, GPIO_Pin_7);
-    GPIO_ResetBits(GPIOB, GPIO_Pin_8);
-}
-
-void Motor_Stop(void) {
-    // Left stop
-    GPIO_ResetBits(GPIOC, GPIO_Pin_10 | GPIO_Pin_0);
-    // Right stop
-    GPIO_ResetBits(GPIOB, GPIO_Pin_7 | GPIO_Pin_8);
-}
-
-
-
-uint32_t Get_Ultrasonic_Dist(uint8_t sensor_id) {
-    GPIO_TypeDef* TRIG_PORT;
-    uint16_t TRIG_PIN;
-    GPIO_TypeDef* ECHO_PORT;
-    uint16_t ECHO_PIN;
-
-    switch(sensor_id) {
-        case 1: TRIG_PORT = GPIOA; TRIG_PIN = GPIO_Pin_4; ECHO_PORT = GPIOA; ECHO_PIN = GPIO_Pin_5; break;
-        case 2: TRIG_PORT = GPIOA; TRIG_PIN = GPIO_Pin_6; ECHO_PORT = GPIOA; ECHO_PIN = GPIO_Pin_7; break;
-        case 3: TRIG_PORT = GPIOB; TRIG_PIN = GPIO_Pin_10; ECHO_PORT = GPIOB; ECHO_PIN = GPIO_Pin_11; break;
-        default: return 0;
-    }
-
-    GPIO_ResetBits(TRIG_PORT, TRIG_PIN);
-    Delay_us(5);
-    GPIO_SetBits(TRIG_PORT, TRIG_PIN);
-    Delay_us(15);
-    GPIO_ResetBits(TRIG_PORT, TRIG_PIN);
-
-    uint32_t timeout = 50000;
-    while (GPIO_ReadInputDataBit(ECHO_PORT, ECHO_PIN) == RESET) {
-        if (timeout-- == 0) return 0;
-    }
-
-    uint32_t count = 0;
-    while (GPIO_ReadInputDataBit(ECHO_PORT, ECHO_PIN) == SET) {
-        count++;
-        if (count > 100000) break;
-    }
-
-    return count / 58;
-}
-
-void USART1_Init(void) {
-    USART_InitTypeDef USART_InitStructure;
-    USART_Cmd(USART1, ENABLE);
-    USART_InitStructure.USART_BaudRate = 9600;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_Init(USART1, &USART_InitStructure);
-    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-}
-
-void USART2_Init(void) {
-    USART_InitTypeDef USART_InitStructure;
-    USART_Cmd(USART2, ENABLE);
-    USART_InitStructure.USART_BaudRate = 9600;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_Init(USART2, &USART_InitStructure);
-    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 }
 
 void NVIC_Configure(void) {
@@ -325,13 +152,6 @@ void ADC_Configure(void) {
 
    ADC_SoftwareStartConvCmd(ADC1, ENABLE);
    ADC_DMACmd(ADC1, ENABLE);
-}
-
-void USART2_SendString(const char* str) {
-    while (*str) {
-        USART_SendData(USART2, *str++);
-        while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-    }
 }
 
 void Sensor_Mode_WaitRain(void) {

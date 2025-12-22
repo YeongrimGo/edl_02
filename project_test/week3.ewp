@@ -349,7 +349,6 @@
                     <state>$PROJ_DIR$\user\inc</state>
                     <state>$PROJ_DIR$\Libraries\LCD</state>
                     <state>$PROJ_DIR$\</state>
-                    <state>$PROJ_DIR$\Libraries\ALARM</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -2058,15 +2057,6 @@
     <group>
         <name>Libraries</name>
         <group>
-            <name>ALARM</name>
-            <file>
-                <name>$PROJ_DIR$\Libraries\ALARM\alarm.c</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\Libraries\ALARM\alarm.h</name>
-            </file>
-        </group>
-        <group>
             <name>CMSIS</name>
             <group>
                 <name>DeviceSupport</name>
@@ -2258,7 +2248,13 @@
         <group>
             <name>inc</name>
             <file>
+                <name>$PROJ_DIR$\user\inc\alarm.h</name>
+            </file>
+            <file>
                 <name>$PROJ_DIR$\user\inc\hw_config.h</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\user\inc\motor.h</name>
             </file>
             <file>
                 <name>$PROJ_DIR$\user\inc\stm32f10x_conf.h</name>
@@ -2266,7 +2262,16 @@
             <file>
                 <name>$PROJ_DIR$\user\inc\stm32f10x_it.h</name>
             </file>
+            <file>
+                <name>$PROJ_DIR$\user\inc\ultrasonic.h</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\user\inc\usart_comm.h</name>
+            </file>
         </group>
+        <file>
+            <name>$PROJ_DIR$\user\alarm.c</name>
+        </file>
         <file>
             <name>$PROJ_DIR$\user\hw_config.c</name>
         </file>
@@ -2274,7 +2279,16 @@
             <name>$PROJ_DIR$\user\main.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\user\motor.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\user\stm32f10x_it.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\user\ultrasonic.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\user\usart_comm.c</name>
         </file>
     </group>
     <file>

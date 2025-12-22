@@ -3,8 +3,11 @@
 #include "misc.h"
 #include "lcd.h"
 #include "touch.h"
-#include "alarm.h"
-#include "inc/hw_config.h" 
+#include "inc/alarm.h"
+#include "inc/hw_config.h"
+#include "inc/motor.h"
+#include "inc/ultrasonic.h"
+#include "inc/usart_comm.h"
 #include <stdio.h>
 
 extern volatile AlarmState* p_alarm_state;
@@ -28,7 +31,7 @@ int main(void) {
     Alarm_Init();
     Alarm_Reset();
 
-    // [요청] 블루투스 연결 완료 메시지 (영어)
+    // 블루투스 연결 완료 메시지
     USART2_SendString("\r\nBluetooth Connected. Please send the alarm time in seconds.\r\n");
 
     while (1) {
@@ -39,7 +42,7 @@ int main(void) {
             char time_str[20];
             char report[80];
 
-            // [요청] 00시 00분 00초 형식으로 변환
+            // 시간 형식으로 변환
             Time_Format(final_time, time_str);
 
             sprintf(report, "\r\n[STOP] Duration: %s\r\n", time_str);
