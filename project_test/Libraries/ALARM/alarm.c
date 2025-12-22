@@ -108,7 +108,7 @@ uint32_t Alarm_GetElapsedSeconds(void) {
     return *p_elapsed_seconds;
 }
 
-// --- Main Alarm Process ---
+// --- Main Alarm Process (수정됨) ---
 void Alarm_Process(void) {
     char lcd_buffer[30];
     char time_str[20];
@@ -130,7 +130,13 @@ void Alarm_Process(void) {
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
-            LCD_ShowString(40, 50, (u8*)"WAIT RAIN...", BLACK, YELLOW);
+
+            // [수정 요청] 화면 출력 문구 변경 (여러 줄 출력)
+            // X좌표를 10으로 당겨서 긴 문장이 잘리지 않게 함
+            LCD_ShowString(10, 40, (u8*)"WAITING FOR WATER...", BLACK, YELLOW);
+            LCD_ShowString(10, 70, (u8*)"GO TO BATHROOM!!", RED, YELLOW);    // 강조를 위해 RED 사용
+            LCD_ShowString(10, 100, (u8*)"DON'T SLEEP AGAIN!!", RED, YELLOW); // 강조를 위해 RED 사용
+
             stability_count = 0;
             Motor_Stop();
         }
@@ -163,10 +169,6 @@ void Alarm_Process(void) {
                 sprintf(lcd_buffer, "reminder %s", time_str);
                 LCD_ShowString(20, 100, (u8*)lcd_buffer, BLACK, WHITE);
             }
-
-            // [요청 2 & 3] Countdown 중에는 초음파 센서 값 출력하지 않음 (Display logic removed here)
-            // 센서 하드웨어 리딩은 유지 (필요하다면) 하지만 화면엔 안 그림
-
             GPIO_ResetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
             break;
@@ -214,7 +216,9 @@ void Alarm_Process(void) {
                 static uint16_t last_rain_val = 9999;
 
                 if (abs((int)rain_val - (int)last_rain_val) > 50) {
-                    sprintf(lcd_buffer, "Rain Sensor: %04d", rain_val);
+                    // [수정 요청] Rain Sensor -> Water Sensor 로 문구 변경
+                    sprintf(lcd_buffer, "Water Sensor: %04d", rain_val);
+                    // 위쪽 경고 문구들과 겹치지 않게 Y좌표 150 유지
                     LCD_ShowString(20, 150, (u8*)lcd_buffer, BLACK, YELLOW);
                     last_rain_val = rain_val;
                 }
@@ -254,8 +258,6 @@ void Alarm_Process(void) {
                 dist_R = Get_Ultrasonic_Dist(3);
                 sensor_timer = 0;
 
-                // 세로 배치: L(Line 1), C(Line 2), R(Line 3)
-                // Y 좌표 간격을 25px 정도로 설정
                 sprintf(lcd_buffer, "L: %3d cm", (int)dist_L);
                 LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
 
