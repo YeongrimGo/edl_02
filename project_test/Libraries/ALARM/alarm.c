@@ -108,7 +108,7 @@ uint32_t Alarm_GetElapsedSeconds(void) {
     return *p_elapsed_seconds;
 }
 
-// --- Main Alarm Process (수정됨) ---
+// --- Main Alarm Process (Countdown 센서 출력 제거 확인) ---
 void Alarm_Process(void) {
     char lcd_buffer[30];
     char time_str[20];
@@ -126,14 +126,13 @@ void Alarm_Process(void) {
     static uint32_t sensor_timer = 0;
     const uint32_t OBS_THRESHOLD = 25;
 
-    // 1. 상태 변경 시 초기화
+    // 1. 상태 변경 시 초기화 및 화면 클리어
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
             LCD_ShowString(10, 40, (u8*)"WAITING FOR WATER...", BLACK, YELLOW);
             LCD_ShowString(10, 70, (u8*)"GO TO BATHROOM!!", RED, YELLOW);
             LCD_ShowString(10, 100, (u8*)"DON'T SLEEP AGAIN!!", RED, YELLOW);
-
             stability_count = 0;
             Motor_Stop();
         }
@@ -143,10 +142,9 @@ void Alarm_Process(void) {
         }
         else if (*p_alarm_state == STATE_ALARM_ACTIVE) {
              LCD_Clear(RED);
-             // [수정] 알람 도망 상태 문구 추가
              LCD_ShowString(40, 20, (u8*)"RUNAWAY ALARM!", WHITE, RED);
-             LCD_ShowString(40, 50, (u8*)"Catch the Alarm!", WHITE, RED);   // 추가된 문구 1
-             LCD_ShowString(20, 80, (u8*)"Touch the Sensor!", YELLOW, RED);  // 추가된 문구 2 (강조색)
+             LCD_ShowString(40, 50, (u8*)"Catch the Alarm!", WHITE, RED);
+             LCD_ShowString(20, 80, (u8*)"Touch the Sensor!", YELLOW, RED);
 
              last_dist_L = 999;
              last_action[0] = '\0';
@@ -156,38 +154,33 @@ void Alarm_Process(void) {
              LCD_Clear(WHITE);
              LCD_ShowString(20, 50, (u8*)"Wait BT Connect...", BLACK, WHITE);
         }
+        // STATE_COUNTDOWN으로 진입 시의 LCD_Clear는 Alarm_Start() 함수에서 처리된다고 가정합니다.
+
         last_state = *p_alarm_state;
     }
 
     // 2. 상태별 동작
     switch (*p_alarm_state) {
         case STATE_COUNTDOWN:
+            // [확인] 이 상태에서는 초음파 센서 값을 읽거나 출력하지 않습니다.
+            // 오직 시간만 갱신합니다.
             if (last_sec != *p_countdown_seconds) {
                 last_sec = *p_countdown_seconds;
                 Time_Format(last_sec, time_str);
                 sprintf(lcd_buffer, "reminder %s", time_str);
                 LCD_ShowString(20, 100, (u8*)lcd_buffer, BLACK, WHITE);
             }
-            GPIO_ResetBits(GPIOB, GPIO_Pin_0);
-            Motor_Stop();
+            GPIO_ResetBits(GPIOB, GPIO_Pin_0); // 부저 끔
+            Motor_Stop(); // 모터 정지
             break;
 
         case STATE_ALARM_ACTIVE:
-            // 센서 값은 읽지만, LCD에는 표시하지 않음
+            // 센서 값은 내부 로직용으로만 읽고, 화면에는 출력하지 않음
             dist_L = Get_Ultrasonic_Dist(1);
             dist_C = Get_Ultrasonic_Dist(2);
             dist_R = Get_Ultrasonic_Dist(3);
 
-            // [삭제됨] 초음파 센서 값 출력 코드 제거
-            /*
-            if(dist_L != last_dist_L || dist_C != last_dist_C || dist_R != last_dist_R) {
-                sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
-                LCD_ShowString(20, 80, (u8*)lcd_buffer, YELLOW, RED);
-                last_dist_L = dist_L; last_dist_C = dist_C; last_dist_R = dist_R;
-            }
-            */
-
-            // 모터 제어 로직
+            // 모터 제어 (장애물 회피)
             if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
                 sprintf(current_action, "Action: Go Back");
                 Motor_Backward();
@@ -205,7 +198,7 @@ void Alarm_Process(void) {
                 Motor_Forward();
             }
 
-            // [유지] Action 상태 표시 (Y좌표 140)
+            // Action 상태 표시
             if (strcmp(current_action, last_action) != 0) {
                 LCD_ShowString(20, 140, (u8*)current_action, WHITE, RED);
                 strcpy(last_action, current_action);
@@ -253,6 +246,7 @@ void Alarm_Process(void) {
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
 
+            // IDLE 상태에서만 센서 값을 출력합니다.
             sensor_timer++;
             if (sensor_timer > 500) {
                 dist_L = Get_Ultrasonic_Dist(1);
