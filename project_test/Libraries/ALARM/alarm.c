@@ -25,7 +25,6 @@ volatile AlarmState* p_alarm_state = &alarm_state;
 #define NOTE_E  1800
 
 uint16_t reveille_notes[] = { NOTE_G, NOTE_C, NOTE_E, NOTE_C, NOTE_G };
-// [수정] 박자를 짧게 줄여 부저가 울리는 동안 센서가 멈추는 시간을 최소화
 uint32_t reveille_beats[] = { 5, 5, 5, 5, 10 };
 
 // --- Helper Functions ---
@@ -37,7 +36,6 @@ void Time_Format(uint32_t total_seconds, char* buffer) {
     sprintf(buffer, "%02d:%02d:%02d", (int)h, (int)m, (int)s);
 }
 
-// [수정] 부저 소리 출력 (Loop 중단 조건 추가)
 static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
     for (uint32_t i = 0; i < duration; i++) {
         GPIO_SetBits(GPIOB, GPIO_Pin_0);
@@ -45,7 +43,6 @@ static void Buzzer_Sound(uint16_t pitch, uint32_t duration) {
         GPIO_ResetBits(GPIOB, GPIO_Pin_0);
         for (volatile int d = 0; d < pitch; d++);
 
-        // [중요] 알람 상태가 아니거나 비 대기 상태가 아니면 소리를 즉시 멈추고 복귀
         if (*p_alarm_state != STATE_ALARM_ACTIVE && *p_alarm_state != STATE_WAIT_FOR_RAIN) return;
     }
 }
@@ -82,7 +79,8 @@ void Alarm_Reset(void) {
     TIM_Cmd(TIM2, DISABLE);
     Motor_Stop();
     LCD_Clear(WHITE);
-    LCD_ShowString(40, 50, (u8*)"[IDLE MODE]", BLACK, WHITE);
+    // [요청 1] 블루투스 연결 대기 문구
+    LCD_ShowString(20, 50, (u8*)"Wait BT Connect...", BLACK, WHITE);
 }
 
 void Alarm_Start(uint16_t seconds) {
@@ -91,12 +89,12 @@ void Alarm_Start(uint16_t seconds) {
         *p_alarm_state = STATE_COUNTDOWN;
         *p_elapsed_seconds = 0;
 
-        // hw_config.c 등에 정의된 센서 초기화 함수 호출
         Sensor_Mode_Reset();
         Motor_Stop();
 
         LCD_Clear(WHITE);
-        LCD_ShowString(40, 50, (u8*)"COUNTDOWN...", RED, WHITE);
+        // [요청 3] Countdown 제목 표시
+        LCD_ShowString(40, 50, (u8*)"[Countdown]", BLUE, WHITE);
 
         TIM_Cmd(TIM2, ENABLE);
     }
@@ -110,12 +108,11 @@ uint32_t Alarm_GetElapsedSeconds(void) {
     return *p_elapsed_seconds;
 }
 
-// --- Main Alarm Process (최적화 적용) ---
+// --- Main Alarm Process ---
 void Alarm_Process(void) {
     char lcd_buffer[30];
     char time_str[20];
 
-    // 상태 추적용 정적 변수 (이전 값과 비교하기 위함)
     static int32_t last_sec = -1;
     static AlarmState last_state = STATE_IDLE;
     static uint32_t stability_count = 0;
@@ -127,9 +124,9 @@ void Alarm_Process(void) {
     char current_action[20];
 
     static uint32_t sensor_timer = 0;
-    const uint32_t OBS_THRESHOLD = 25; // 장애물 감지 거리 (cm)
+    const uint32_t OBS_THRESHOLD = 25;
 
-    // 1. 상태가 변경되었을 때 한 번만 실행되는 초기화 로직 (화면 깜빡임 방지)
+    // 1. 상태 변경 시 초기화
     if (last_state != *p_alarm_state) {
         if (*p_alarm_state == STATE_WAIT_FOR_RAIN) {
             LCD_Clear(YELLOW);
@@ -144,58 +141,47 @@ void Alarm_Process(void) {
         else if (*p_alarm_state == STATE_ALARM_ACTIVE) {
              LCD_Clear(RED);
              LCD_ShowString(40, 20, (u8*)"RUNAWAY ALARM!", WHITE, RED);
-             // 활성 상태 진입 시 값 초기화
              last_dist_L = 999;
              last_action[0] = '\0';
         }
         else if (*p_alarm_state == STATE_IDLE) {
              Motor_Stop();
              LCD_Clear(WHITE);
-             LCD_ShowString(40, 50, (u8*)"[IDLE MODE]", BLACK, WHITE);
+             // [요청 1] IDLE 상태 문구
+             LCD_ShowString(20, 50, (u8*)"Wait BT Connect...", BLACK, WHITE);
         }
         last_state = *p_alarm_state;
     }
 
-    // 2. 상태별 반복 동작
+    // 2. 상태별 동작
     switch (*p_alarm_state) {
         case STATE_COUNTDOWN:
-            // 초 단위 시간이 바뀔 때만 LCD 갱신
+            // [요청 3] 초 단위 시간 갱신 (reminder 00:00:00)
             if (last_sec != *p_countdown_seconds) {
                 last_sec = *p_countdown_seconds;
                 Time_Format(last_sec, time_str);
-                sprintf(lcd_buffer, "Rem: %s", time_str);
-                LCD_ShowString(20, 100, (u8*)lcd_buffer, BLUE, WHITE);
+                sprintf(lcd_buffer, "reminder %s", time_str);
+                LCD_ShowString(20, 100, (u8*)lcd_buffer, BLACK, WHITE);
             }
 
-            // 카운트다운 중에도 센서값은 확인하되, 값이 변할 때만 LCD 출력
-            dist_L = Get_Ultrasonic_Dist(1);
-            dist_C = Get_Ultrasonic_Dist(2);
-            dist_R = Get_Ultrasonic_Dist(3);
-
-            if(dist_L != last_dist_L || dist_C != last_dist_C || dist_R != last_dist_R) {
-                 sprintf(lcd_buffer, "SENS: %2d %2d %2d", (int)dist_L, (int)dist_C, (int)dist_R);
-                 LCD_ShowString(20, 140, (u8*)lcd_buffer, BLACK, WHITE);
-                 last_dist_L = dist_L; last_dist_C = dist_C; last_dist_R = dist_R;
-            }
+            // [요청 2 & 3] Countdown 중에는 초음파 센서 값 출력하지 않음 (Display logic removed here)
+            // 센서 하드웨어 리딩은 유지 (필요하다면) 하지만 화면엔 안 그림
 
             GPIO_ResetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
             break;
 
         case STATE_ALARM_ACTIVE:
-            // (1) 센서 값 읽기 (매 루프 실행)
             dist_L = Get_Ultrasonic_Dist(1);
             dist_C = Get_Ultrasonic_Dist(2);
             dist_R = Get_Ultrasonic_Dist(3);
 
-            // (2) 센서 값 LCD 출력 (값이 변했을 때만 실행 -> 속도 향상 핵심)
             if(dist_L != last_dist_L || dist_C != last_dist_C || dist_R != last_dist_R) {
                 sprintf(lcd_buffer, "L:%2d C:%2d R:%2d", (int)dist_L, (int)dist_C, (int)dist_R);
                 LCD_ShowString(20, 80, (u8*)lcd_buffer, YELLOW, RED);
                 last_dist_L = dist_L; last_dist_C = dist_C; last_dist_R = dist_R;
             }
 
-            // (3) 모터 제어 로직 (장애물 회피)
             if (dist_C > 0 && dist_C < OBS_THRESHOLD) {
                 sprintf(current_action, "Action: Go Back");
                 Motor_Backward();
@@ -213,7 +199,6 @@ void Alarm_Process(void) {
                 Motor_Forward();
             }
 
-            // (4) 동작 상태 LCD 출력 (동작 텍스트가 바뀔 때만 실행)
             if (strcmp(current_action, last_action) != 0) {
                 LCD_ShowString(20, 140, (u8*)current_action, WHITE, RED);
                 strcpy(last_action, current_action);
@@ -228,7 +213,6 @@ void Alarm_Process(void) {
                 uint16_t rain_val = (uint16_t)ADC_Value[0];
                 static uint16_t last_rain_val = 9999;
 
-                // 빗물 센서 값 변화폭이 클 때만 LCD 갱신
                 if (abs((int)rain_val - (int)last_rain_val) > 50) {
                     sprintf(lcd_buffer, "Rain Sensor: %04d", rain_val);
                     LCD_ShowString(20, 150, (u8*)lcd_buffer, BLACK, YELLOW);
@@ -237,7 +221,7 @@ void Alarm_Process(void) {
 
                 if (stability_count < 100) stability_count++;
                 else {
-                    if (rain_val < 2000) { // 빗물 감지 임계값
+                    if (rain_val < 2000) {
                         *p_alarm_state = STATE_ALARM_STOPPED;
                         TIM_Cmd(TIM2, DISABLE);
                     }
@@ -250,7 +234,6 @@ void Alarm_Process(void) {
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
 
-            // 1초마다 시간 갱신
             if (last_sec != *p_elapsed_seconds) {
                 last_sec = *p_elapsed_seconds;
                 Time_Format(*p_elapsed_seconds, time_str);
@@ -263,8 +246,7 @@ void Alarm_Process(void) {
             GPIO_SetBits(GPIOB, GPIO_Pin_0);
             Motor_Stop();
 
-            // IDLE 상태에서도 주기적으로 센서 확인 (테스트용)
-            // 딜레이 카운트(sensor_timer)를 줄여서 반응성 향상 (1000 -> 500)
+            // [요청 1] 센서 값들을 세로로(밑으로) 배치
             sensor_timer++;
             if (sensor_timer > 500) {
                 dist_L = Get_Ultrasonic_Dist(1);
@@ -272,12 +254,16 @@ void Alarm_Process(void) {
                 dist_R = Get_Ultrasonic_Dist(3);
                 sensor_timer = 0;
 
-                sprintf(lcd_buffer, "L:%3d", (int)dist_L);
-                LCD_ShowString(20, 120, (u8*)lcd_buffer, BLUE, WHITE);
-                sprintf(lcd_buffer, "C:%3d", (int)dist_C);
-                LCD_ShowString(110, 120, (u8*)lcd_buffer, RED, WHITE);
-                sprintf(lcd_buffer, "R:%3d", (int)dist_R);
-                LCD_ShowString(200, 120, (u8*)lcd_buffer, BLUE, WHITE);
+                // 세로 배치: L(Line 1), C(Line 2), R(Line 3)
+                // Y 좌표 간격을 25px 정도로 설정
+                sprintf(lcd_buffer, "L: %3d cm", (int)dist_L);
+                LCD_ShowString(40, 100, (u8*)lcd_buffer, BLUE, WHITE);
+
+                sprintf(lcd_buffer, "C: %3d cm", (int)dist_C);
+                LCD_ShowString(40, 125, (u8*)lcd_buffer, RED, WHITE);
+
+                sprintf(lcd_buffer, "R: %3d cm", (int)dist_R);
+                LCD_ShowString(40, 150, (u8*)lcd_buffer, BLUE, WHITE);
             }
             break;
     }
