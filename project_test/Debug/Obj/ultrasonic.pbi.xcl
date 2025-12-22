@@ -1,4 +1,4 @@
-"C:\tue_team02\edl_02\project_test\Libraries\STM32F10x_StdPeriph_Driver_v3.5\src\misc.c"
+"C:\tue_team02\edl_02\project_test\user\ultrasonic.c"
 -std=c11
 -ferror-limit=0
 -fbracket-depth=512
@@ -18,8 +18,6 @@ C:\tue_team02\edl_02\project_test\user\inc
 C:\tue_team02\edl_02\project_test\Libraries\LCD
 -I
 C:\tue_team02\edl_02\project_test
--I
-C:\tue_team02\edl_02\project_test\Libraries\ALARM
 -I
 C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\arm\CMSIS\Core\Include
 -I
@@ -44,8 +42,6 @@ C:\tue_team02\edl_02\project_test\user\inc
 C:\tue_team02\edl_02\project_test\Libraries\LCD
 -I
 C:\tue_team02\edl_02\project_test
--I
-C:\tue_team02\edl_02\project_test\Libraries\ALARM
 -I
 C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\arm\CMSIS\Core\Include
 -I
